@@ -3,6 +3,7 @@ package com.greengrid.sgemsbackend.controller;
 import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder; // Import this
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -13,9 +14,12 @@ import java.util.Optional;
 public class LoginController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder; // Add this
 
-    public LoginController(UserRepository userRepository) {
+    // Inject PasswordEncoder in the constructor
+    public LoginController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -23,14 +27,14 @@ public class LoginController {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");
 
-        // 1. Find user by email
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            // 2. Check password (Simple check for now)
-            if (user.getPassword().equals(password)) {
-                // SUCCESS! Return the user details (excluding password)
+
+            // SECURITY CHECK:
+            // Use .matches(rawPassword, hashedPassword)
+            if (passwordEncoder.matches(password, user.getPassword())) {
                 return ResponseEntity.ok(Map.of(
                         "message", "Login successful",
                         "role", user.getRole(),
@@ -39,7 +43,6 @@ public class LoginController {
             }
         }
 
-        // FAILURE
         return ResponseEntity.status(401).body(Map.of("message", "Invalid email or password"));
     }
 }
