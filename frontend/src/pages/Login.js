@@ -6,17 +6,38 @@ function Login() {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
 
-        // TODO: Connect this to Spring Boot Backend later
-        console.log("Logging in with:", email, password);
+        const loginData = { email, password };
 
-        // For now, let's simulate a successful login
-        if(email && password) {
-            navigate('/'); // Redirect to Dashboard
-        } else {
-            alert("Please enter both email and password");
+        try {
+            // 1. Send data to Spring Boot Backend
+            const response = await fetch('http://localhost:8080/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(loginData),
+            });
+
+            // 2. Check if Backend said "OK"
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Login Success:", data);
+
+                // Optional: Save user info to browser storage so they stay logged in
+                localStorage.setItem('userRole', data.role);
+
+                alert("Login Successful! Welcome " + data.fullName);
+                navigate('/'); // Redirect to Dashboard
+            } else {
+                alert("Login Failed: Invalid Email or Password");
+            }
+
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Server Error: Is the Backend running?");
         }
     };
 
@@ -31,9 +52,9 @@ function Login() {
                             <input
                                 type="email"
                                 className="form-control"
-                                placeholder="admin@greengrid.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                                required
                             />
                         </div>
                         <div className="mb-3">
@@ -41,18 +62,15 @@ function Login() {
                             <input
                                 type="password"
                                 className="form-control"
-                                placeholder="********"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                required
                             />
                         </div>
                         <div className="d-grid">
                             <button type="submit" className="btn btn-primary">Sign In</button>
                         </div>
                     </form>
-                    <div className="text-center mt-3">
-                        <small className="text-muted">Forgot password? Contact IT Support.</small>
-                    </div>
                 </div>
             </div>
         </div>
