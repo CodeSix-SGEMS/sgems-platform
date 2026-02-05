@@ -1,40 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
 
+    // Get the 'login' function from our global store
+    const { login } = useContext(AuthContext);
+
     const handleLogin = async (e) => {
         e.preventDefault();
-
         const loginData = { email, password };
 
         try {
-            // 1. Send data to Spring Boot Backend
             const response = await fetch('http://localhost:8080/api/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(loginData),
             });
 
-            // 2. Check if Backend said "OK"
             if (response.ok) {
                 const data = await response.json();
-                console.log("Login Success:", data);
 
-                // Optional: Save user info to browser storage so they stay logged in
-                localStorage.setItem('userRole', data.role);
+                // Call the global login function
+                login(data);
 
                 alert("Login Successful! Welcome " + data.fullName);
-                navigate('/'); // Redirect to Dashboard
+                navigate('/');
             } else {
                 alert("Login Failed: Invalid Email or Password");
             }
-
         } catch (error) {
             console.error("Error:", error);
             alert("Server Error: Is the Backend running?");

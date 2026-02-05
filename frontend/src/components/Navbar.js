@@ -1,7 +1,16 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext'; // Import Context
 
 function Navbar() {
+    const { user, logout } = useContext(AuthContext); // Get user & logout function
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     return (
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
             <div className="container-fluid">
@@ -11,10 +20,19 @@ function Navbar() {
                         <li className="nav-item">
                             <Link className="nav-link" to="/">Dashboard</Link>
                         </li>
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/login">Login</Link>
-                        </li>
                     </ul>
+
+                    {/* Dynamic Section */}
+                    <div className="d-flex">
+                        {user ? (
+                            <div className="d-flex align-items-center">
+                                <span className="text-light me-3">Hello, {user.fullName}</span>
+                                <button onClick={handleLogout} className="btn btn-outline-danger btn-sm">Logout</button>
+                            </div>
+                        ) : (
+                            <Link className="btn btn-outline-light btn-sm" to="/login">Login</Link>
+                        )}
+                    </div>
                 </div>
             </div>
         </nav>
