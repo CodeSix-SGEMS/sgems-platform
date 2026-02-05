@@ -20,6 +20,12 @@ function Navbar() {
                         <li className="nav-item">
                             <Link className="nav-link" to="/">Dashboard</Link>
                         </li>
+                        {/* Show Admin Link ONLY if role is ADMIN */}
+                        {user && user.role === 'ADMIN' && (
+                            <li className="nav-item">
+                                <Link className="nav-link text-warning" to="/admin">Admin Panel</Link>
+                            </li>
+                        )}
                     </ul>
 
                     {/* Dynamic Section */}
