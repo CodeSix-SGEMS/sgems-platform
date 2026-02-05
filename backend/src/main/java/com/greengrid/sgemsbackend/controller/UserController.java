@@ -49,4 +49,18 @@ public class UserController {
         userRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "User deleted"));
     }
+
+    // 4. Update User
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+        return userRepository.findById(id).map(user -> {
+            user.setFullName(userDetails.getFullName());
+            user.setEmail(userDetails.getEmail());
+            user.setRole(userDetails.getRole());
+            // Note: We usually don't update passwords here for security reasons
+
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "User updated successfully"));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

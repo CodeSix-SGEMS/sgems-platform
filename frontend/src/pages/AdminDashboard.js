@@ -41,6 +41,23 @@ function AdminDashboard() {
         }
     };
 
+    // 4. Toggle Role (Promote/Demote)
+    const toggleRole = async (user) => {
+        const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
+        if(!window.confirm(`Change role to ${newRole}?`)) return;
+
+        await fetch(`http://localhost:8080/api/users/${user.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            // We only send the fields we want to update.
+            // NOTE: Ideally the backend should handle partial updates,
+            // but our current PUT expects a full User object.
+            // So we send existing data + new role.
+            body: JSON.stringify({ ...user, role: newRole })
+        });
+        fetchUsers();
+    };
+
     return (
         <div className="container mt-5">
             <h2 className="mb-4">Admin User Management</h2>
@@ -93,9 +110,12 @@ function AdminDashboard() {
                         <td>{user.email}</td>
                         <td><span className={`badge ${user.role === 'ADMIN' ? 'bg-danger' : 'bg-primary'}`}>{user.role}</span></td>
                         <td>
+                            <button onClick={() => toggleRole(user)} className="btn btn-warning btn-sm me-2">Change Role</button>
                             <button onClick={() => handleDelete(user.id)} className="btn btn-danger btn-sm">Delete</button>
                         </td>
+
                     </tr>
+
                 ))}
                 </tbody>
             </table>

@@ -34,9 +34,12 @@ public class LoginController {
 
             // SECURITY CHECK:
             // Use .matches(rawPassword, hashedPassword)
+            // ... inside the if (passwordEncoder.matches(...)) block ...
+
             if (passwordEncoder.matches(password, user.getPassword())) {
                 return ResponseEntity.ok(Map.of(
                         "message", "Login successful",
+                        "id", user.getId(),            // <--- ADD THIS LINE
                         "role", user.getRole(),
                         "fullName", user.getFullName()
                 ));

@@ -40,7 +40,7 @@ function Sidebar() {
 
                 {/* Future Feature Placeholder */}
                 <li className="nav-item mb-2">
-                    <Link to="#" className="nav-link text-white disabled" style={{ opacity: 0.5 }}>
+                    <Link to="/devices" className={`nav-link text-white ${location.pathname === '/devices' ? 'active bg-success' : ''}`}>
                         <FaSolarPanel className="me-2" /> My Devices
                     </Link>
                 </li>
