@@ -1,16 +1,41 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { FaBolt, FaServer, FaUserCheck, FaClock } from 'react-icons/fa';
+import EnergyChart from '../components/EnergyChart';
+import { FaBolt, FaServer, FaUserCheck, FaSolarPanel } from 'react-icons/fa';
 
 function Dashboard() {
     const { user } = useContext(AuthContext);
 
-    // Dummy Stats (We will make these real later)
-    const stats = [
-        { title: "System Status", value: "Online", color: "success", icon: <FaServer /> },
-        { title: "Active Users", value: "3", color: "primary", icon: <FaUserCheck /> },
-        { title: "Energy Saved", value: "124 kWh", color: "warning", icon: <FaBolt /> },
-        { title: "Uptime", value: "99.9%", color: "info", icon: <FaClock /> },
+    // Default State (starts at 0)
+    const [stats, setStats] = useState({
+        systemStatus: 'Loading...',
+        activeUsers: 0,
+        energySaved: '0 kWh',
+        connectedDevices: 0
+    });
+
+    // Fetch live stats on load
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('http://localhost:8080/api/stats');
+                if(response.ok) {
+                    const data = await response.json();
+                    setStats(data);
+                }
+            } catch (error) {
+                setStats(prev => ({ ...prev, systemStatus: 'Offline' }));
+            }
+        };
+        fetchStats();
+    }, []);
+
+    // Define the cards dynamically
+    const statCards = [
+        { title: "System Status", value: stats.systemStatus, color: stats.systemStatus === 'Online' ? "success" : "danger", icon: <FaServer /> },
+        { title: "Active Users", value: stats.activeUsers, color: "primary", icon: <FaUserCheck /> },
+        { title: "Energy Saved", value: stats.energySaved, color: "warning", icon: <FaBolt /> },
+        { title: "Total Devices", value: stats.connectedDevices, color: "info", icon: <FaSolarPanel /> },
     ];
 
     return (
@@ -20,7 +45,7 @@ function Dashboard() {
 
             {/* Stat Cards Row */}
             <div className="row g-4 mb-5">
-                {stats.map((stat, index) => (
+                {statCards.map((stat, index) => (
                     <div key={index} className="col-md-3">
                         <div className={`card shadow-sm border-start border-4 border-${stat.color} h-100`}>
                             <div className="card-body d-flex align-items-center justify-content-between">
@@ -37,13 +62,15 @@ function Dashboard() {
                 ))}
             </div>
 
-            {/* Quick Action Area (Placeholder) */}
+            {/* ... Keep the Analytics placeholder section below ... */}
+            {/* System Analytics Area */}
             <div className="card shadow-sm">
                 <div className="card-header bg-white fw-bold">
-                    System Analytics
+                    <FaBolt className="me-2 text-warning" />
+                    Weekly Energy Analytics (Generated vs Consumed)
                 </div>
-                <div className="card-body text-center py-5">
-                    <p className="text-muted">Energy consumption charts will appear here.</p>
+                <div className="card-body">
+                    <EnergyChart />
                 </div>
             </div>
         </div>
