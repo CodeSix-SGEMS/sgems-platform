@@ -1,13 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // <--- Import Link
 import { AuthContext } from '../context/AuthContext';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
-
-    // Get the 'login' function from our global store
     const { login } = useContext(AuthContext);
 
     const handleLogin = async (e) => {
@@ -23,12 +21,9 @@ function Login() {
 
             if (response.ok) {
                 const data = await response.json();
-
-                // Call the global login function
                 login(data);
-
                 alert("Login Successful! Welcome " + data.fullName);
-                navigate('/');
+                navigate('/dashboard');
             } else {
                 alert("Login Failed: Invalid Email or Password");
             }
@@ -39,10 +34,10 @@ function Login() {
     };
 
     return (
-        <div className="container d-flex justify-content-center align-items-center vh-100">
-            <div className="card shadow-lg p-4" style={{ width: '400px' }}>
+        <div className="container d-flex justify-content-center align-items-center vh-100 bg-light">
+            <div className="card shadow p-4" style={{ width: '400px' }}>
                 <div className="card-body">
-                    <h3 className="text-center mb-4 text-primary">SGEMS Login</h3>
+                    <h3 className="text-center mb-4 text-primary fw-bold">SGEMS Login</h3>
                     <form onSubmit={handleLogin}>
                         <div className="mb-3">
                             <label className="form-label">Email Address</label>
@@ -64,8 +59,24 @@ function Login() {
                                 required
                             />
                         </div>
-                        <div className="d-grid">
+
+                        {/* Forgot Password Link */}
+                        <div className="d-flex justify-content-end mb-3">
+                            <Link to="/forgot-password" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>
+                                Forgot Password?
+                            </Link>
+                        </div>
+
+                        <div className="d-grid mb-3">
                             <button type="submit" className="btn btn-primary">Sign In</button>
+                        </div>
+
+                        {/* Create Account Link */}
+                        <div className="text-center">
+                            <span className="text-muted">Don't have an account? </span>
+                            <Link to="/register" className="fw-bold" style={{ textDecoration: 'none' }}>
+                                Create one
+                            </Link>
                         </div>
                     </form>
                 </div>

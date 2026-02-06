@@ -3,27 +3,35 @@ import React, { createContext, useState, useEffect } from 'react';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    // 1. INITIALIZE STATE FROM STORAGE
+    // Instead of starting with 'null', we check if data already exists in the browser.
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
 
-    // 1. On App Start: Check if user is already saved in LocalStorage
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
-
-    // 2. Login Function: Saves user to State AND LocalStorage
+    // 2. LOGIN FUNCTION
     const login = (userData) => {
         setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
+        // Save to browser hard drive
+        localStorage.setItem('user', JSON.stringify(userData));
     };
 
-    // 3. Logout Function: Clears everything
+    // 3. LOGOUT FUNCTION
     const logout = () => {
         setUser(null);
-        localStorage.removeItem("user");
+        // Clear from browser hard drive
+        localStorage.removeItem('user');
     };
+
+    // Optional: Sync state if external changes happen (safety check)
+    useEffect(() => {
+        // This ensures if you manually clear cookies, the app reacts
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            setUser(JSON.parse(savedUser));
+        }
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, login, logout }}>
