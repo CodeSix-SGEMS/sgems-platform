@@ -4,6 +4,7 @@ import com.greengrid.sgemsbackend.entity.Device;
 import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.DeviceRepository;
 import com.greengrid.sgemsbackend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,65 +14,53 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/devices")
+@CrossOrigin(origins = "http://localhost:3000")
 public class DeviceController {
 
-    private final DeviceRepository deviceRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    private DeviceRepository deviceRepository;
 
-    public DeviceController(DeviceRepository deviceRepository, UserRepository userRepository) {
-        this.deviceRepository = deviceRepository;
-        this.userRepository = userRepository;
+    @Autowired
+    private UserRepository userRepository;
+
+    // 1. Get My Devices
+    @GetMapping("/my-devices/{userId}")
+    public ResponseEntity<List<Device>> getMyDevices(@PathVariable Long userId) {
+        List<Device> devices = deviceRepository.findByOwnerId(userId);
+        return ResponseEntity.ok(devices); // Returns [] if empty, never null
     }
 
-    // 1. Get MY Devices (We pass the user ID in the query for now, e.g. ?userId=1)
-    @GetMapping
-    public List<Device> getMyDevices(@RequestParam Long userId) {
-        return deviceRepository.findByOwnerId(userId);
-    }
-
-    // 2. Add New Device
-    @PostMapping
-    public ResponseEntity<?> addDevice(@RequestBody Map<String, Object> payload) {
-        Long userId = Long.valueOf(payload.get("userId").toString());
-        String name = (String) payload.get("name");
-        String type = (String) payload.get("type");
-        String serial = (String) payload.get("serialNumber");
-
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
+    // 2. Add Device
+    @PostMapping("/add")
+    public ResponseEntity<?> addDevice(@RequestBody Map<String, String> payload, @RequestParam Long userId) {
+        Optional<User> owner = userRepository.findById(userId);
+        if (owner.isEmpty()) return ResponseEntity.badRequest().body("User not found");
 
         Device device = new Device();
-        device.setName(name);
-        device.setType(type);
-        device.setSerialNumber(serial);
-        device.setStatus("ONLINE"); // Default status
-        device.setOwner(userOpt.get());
+        device.setName(payload.get("name"));
+        device.setType(payload.get("type"));
+        device.setSerialNumber(payload.get("serialNumber"));
+        device.setStatus("ONLINE");
+        device.setOwner(owner.get());
 
-        deviceRepository.save(device);
-        return ResponseEntity.ok(Map.of("message", "Device added successfully"));
+        Device saved = deviceRepository.save(device);
+        return ResponseEntity.ok(saved);
     }
 
-    // 3. Delete Device
+    // 3. Toggle Status
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestParam String status) {
+        return deviceRepository.findById(id).map(device -> {
+            device.setStatus(status);
+            deviceRepository.save(device);
+            return ResponseEntity.ok("Status updated");
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    // 4. Delete Device
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteDevice(@PathVariable Long id) {
-        if (deviceRepository.existsById(id)) {
-            deviceRepository.deleteById(id);
-            return ResponseEntity.ok(Map.of("message", "Device deleted successfully"));
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    // 4. Update Device (Rename or Change Status)
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateDevice(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
-        return deviceRepository.findById(id).map(device -> {
-            if (payload.containsKey("name")) device.setName((String) payload.get("name"));
-            if (payload.containsKey("status")) device.setStatus((String) payload.get("status"));
-
-            deviceRepository.save(device);
-            return ResponseEntity.ok(Map.of("message", "Device updated successfully"));
-        }).orElse(ResponseEntity.notFound().build());
+        deviceRepository.deleteById(id);
+        return ResponseEntity.ok("Deleted");
     }
 }

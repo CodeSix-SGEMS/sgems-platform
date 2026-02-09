@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 import {
     FaHome, FaSolarPanel, FaFileInvoiceDollar, FaTools,
     FaExclamationTriangle, FaBoxOpen, FaSignOutAlt, FaFileAlt, FaUsers
@@ -13,6 +14,7 @@ function Sidebar() {
 
     const handleLogout = () => {
         logout();
+        toast.info("See you soon! 👋"); // <--- The nice touch
         navigate('/login');
     };
 
@@ -94,6 +96,7 @@ function Sidebar() {
                 </button>
             </div>
         </div>
+
     );
 }
 

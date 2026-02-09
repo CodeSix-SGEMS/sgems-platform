@@ -11,6 +11,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import Inventory from './pages/Inventory'; // <--- Import
 import Reports from './pages/Reports';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
     return (
@@ -45,8 +47,12 @@ function App() {
                     <Route path="/reports" element={
                         <ProtectedRoute><Reports /></ProtectedRoute>
                     } />
+
+
                 </Routes>
             </Layout>
+            {/* --- 2. ADD THE POPUP CONTAINER HERE --- */}
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
         </Router>
     );
 }

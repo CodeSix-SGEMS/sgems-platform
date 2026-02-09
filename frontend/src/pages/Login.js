@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; // <--- Import Link
 import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -22,10 +23,10 @@ function Login() {
             if (response.ok) {
                 const data = await response.json();
                 login(data);
-                alert("Login Successful! Welcome " + data.fullName);
+                toast.success("Login Successful! Welcome back.");
                 navigate('/dashboard');
             } else {
-                alert("Login Failed: Invalid Email or Password");
+                toast.error("Invalid Credentials. Please try again.");
             }
         } catch (error) {
             console.error("Error:", error);

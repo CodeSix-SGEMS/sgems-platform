@@ -2,65 +2,56 @@ package com.greengrid.sgemsbackend.controller;
 
 import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/users")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    // 1. Get All Users (For the Admin Table)
-    @GetMapping("/users")
+    // 1. Get All Users
+    @GetMapping
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    // 2. Create New User (With Hashed Password)
-    @PostMapping("/users")
-    public ResponseEntity<?> createUser(@RequestBody User user) {
+    // 2. Add User (THIS IS THE MISSING DOOR)
+    @PostMapping("/add")
+    public ResponseEntity<?> addUser(@RequestBody User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Email already exists"));
+            return ResponseEntity.badRequest().body("Email already exists");
         }
-
         // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Save to DB
-        User savedUser = userRepository.save(user);
-
-        return ResponseEntity.ok(Map.of("message", "User created successfully", "id", savedUser.getId()));
+        userRepository.save(user);
+        return ResponseEntity.ok("User created successfully");
     }
 
     // 3. Delete User
-    @DeleteMapping("/users/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         userRepository.deleteById(id);
-        return ResponseEntity.ok(Map.of("message", "User deleted"));
+        return ResponseEntity.ok("User deleted");
     }
 
-    // 4. Update User
-    @PutMapping("/users/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    // 4. Change Role
+    @PutMapping("/{id}/role")
+    public ResponseEntity<?> changeRole(@PathVariable Long id, @RequestParam String role) {
         return userRepository.findById(id).map(user -> {
-            user.setFullName(userDetails.getFullName());
-            user.setEmail(userDetails.getEmail());
-            user.setRole(userDetails.getRole());
-            // Note: We usually don't update passwords here for security reasons
-
+            user.setRole(role);
             userRepository.save(user);
-            return ResponseEntity.ok(Map.of("message", "User updated successfully"));
+            return ResponseEntity.ok("Role updated");
         }).orElse(ResponseEntity.notFound().build());
     }
 }
