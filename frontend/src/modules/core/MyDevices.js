@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import { FaSolarPanel, FaBolt, FaTrash, FaPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify'; // <--- 1. Import Toast
 

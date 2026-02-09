@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import {
     FaFileDownload, FaSolarPanel, FaFileInvoiceDollar,
     FaTools, FaBoxOpen, FaUsers

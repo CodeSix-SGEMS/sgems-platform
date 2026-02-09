@@ -1,16 +1,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // <--- Import Navigate
 import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import AdminDashboard from './pages/AdminDashboard';
+import Login from './modules/core/Login';
+import AdminDashboard from './modules/core/AdminDashboard';
 import Layout from './components/Layout';
-import MyDevices from './pages/MyDevices';
-import LandingPage from './pages/LandingPage'; // <--- Import
-import Register from './pages/Register';
+import MyDevices from './modules/core/MyDevices';
+import LandingPage from './modules/core/LandingPage'; // <--- Import
+import Register from './modules/core/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
-import Inventory from './pages/Inventory'; // <--- Import
-import Reports from './pages/Reports';
+import Inventory from './modules/inventory/Inventory'; // <--- Import
+import Reports from './modules/core/Reports';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
