@@ -2,6 +2,7 @@ package com.greengrid.sgemsbackend.controller;
 
 import com.greengrid.sgemsbackend.dto.ChartDataPoint;
 import com.greengrid.sgemsbackend.repository.DeviceRepository;
+import com.greengrid.sgemsbackend.repository.EnergyReadingRepository;
 import com.greengrid.sgemsbackend.repository.UserRepository;
 import com.greengrid.sgemsbackend.service.SolarmanService;
 import org.springframework.web.bind.annotation.*;
@@ -16,27 +17,34 @@ public class StatsController {
     private final UserRepository userRepository;
     private final DeviceRepository deviceRepository;
     private final SolarmanService solarmanService;
+    private final EnergyReadingRepository energyReadingRepository; // 1. New Field
 
-    // Constructor Injection
-    public StatsController(UserRepository userRepository, DeviceRepository deviceRepository, SolarmanService solarmanService) {
+    // 2. Updated Constructor
+    public StatsController(UserRepository userRepository,
+                           DeviceRepository deviceRepository,
+                           SolarmanService solarmanService,
+                           EnergyReadingRepository energyReadingRepository) {
         this.userRepository = userRepository;
         this.deviceRepository = deviceRepository;
         this.solarmanService = solarmanService;
+        this.energyReadingRepository = energyReadingRepository;
     }
 
-    // 1. SYSTEM STATS (For Admin Dashboard Cards)
-    // This was likely missing or broken!
     @GetMapping
     public Map<String, Object> getSystemStats() {
         long activeUsers = userRepository.count();
         long connectedDevices = deviceRepository.count();
-        long energySaved = connectedDevices * 50; // Simple calculation logic
+
+        // 3. REAL CALCULATION (Sum of DB data)
+        Double totalGen = energyReadingRepository.getTotalEnergyGenerated();
+        double energySaved = (totalGen != null) ? totalGen : 0.0;
 
         Map<String, Object> response = new HashMap<>();
         response.put("systemStatus", "Online");
         response.put("activeUsers", activeUsers);
         response.put("connectedDevices", connectedDevices);
-        response.put("energySaved", energySaved + " kWh");
+        // Format to 1 decimal place (e.g., "150.5 kWh")
+        response.put("energySaved", String.format("%.1f kWh", energySaved));
 
         return response;
     }
@@ -58,30 +66,32 @@ public class StatsController {
         );
     }
 
-    // 3. CHART DATA (Solarman Integration)
+    // 3. CHART ENDPOINT (Fixes the 404 error)
     @GetMapping("/chart")
-    public List<ChartDataPoint> getChartData(@RequestParam(defaultValue = "USER") String role) {
-
-        // If Admin, try Real Solarman Data
-        if (role.equals("ADMIN")) {
-            List<ChartDataPoint> realData = solarmanService.getRealData();
-            if (!realData.isEmpty()) {
-                return realData;
-            }
-            System.out.println("⚠️ API Unreachable/Empty, using simulation.");
+    public List<ChartDataPoint> getChartData(@RequestParam String role, @RequestParam(defaultValue = "7") int days) {
+        // Map the "ADMIN" role to your main Solarman service data
+        if ("ADMIN".equalsIgnoreCase(role)) {
+            // Using getRealData() because it fetches the main station data defined in properties
+            return solarmanService.getRealData();
         }
 
-        // Fallback / User Simulation
-        List<ChartDataPoint> data = new ArrayList<>();
-        String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-        Random rand = new Random();
-        double multiplier = role.equals("ADMIN") ? 1000.0 : 10.0;
+        // Optional: specific user logic (if needed later)
+        // return solarmanService.getDataFromDatabase(userId, days);
 
-        for (String day : days) {
-            double generated = (rand.nextInt(50) + 10) * multiplier;
-            double consumed = (rand.nextInt(40) + 10) * multiplier;
-            data.add(new ChartDataPoint(day, generated, consumed));
+        return new ArrayList<>();
+    }
+
+    @GetMapping("/chart/devices")
+    public List<Map<String, Object>> getDevicePieChart() {
+        List<Object[]> results = energyReadingRepository.getConsumptionByDevice();
+        List<Map<String, Object>> chartData = new ArrayList<>();
+
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", row[0]);     // Device Name
+            item.put("value", row[1]);    // Total Consumed kWh
+            chartData.add(item);
         }
-        return data;
+        return chartData;
     }
 }

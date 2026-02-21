@@ -1,6 +1,9 @@
 package com.greengrid.sgemsbackend.service;
 
 import com.greengrid.sgemsbackend.dto.ChartDataPoint;
+import com.greengrid.sgemsbackend.repository.DeviceRepository;
+import com.greengrid.sgemsbackend.repository.EnergyReadingRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -9,8 +12,19 @@ import org.springframework.web.client.RestTemplate;
 
 import java.security.MessageDigest;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import com.greengrid.sgemsbackend.entity.EnergyReading;
+import com.greengrid.sgemsbackend.entity.Device;
+import com.greengrid.sgemsbackend.repository.EnergyReadingRepository;
+import com.greengrid.sgemsbackend.repository.DeviceRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
+
+import org.springframework.cache.annotation.Cacheable;
 
 @Service
 public class SolarmanService {
@@ -29,6 +43,12 @@ public class SolarmanService {
 
     @Value("${solarman.api-url}")
     private String apiUrl;
+
+    @Autowired
+    private EnergyReadingRepository energyReadingRepository;
+
+    @Autowired
+    private DeviceRepository deviceRepository;
 
     private String accessToken = null;
     private Long stationId = null;
@@ -77,6 +97,7 @@ public class SolarmanService {
     }
 
     // 2. Get Station ID
+    @Cacheable(value = "stationId", unless = "#result == null")
     public Long getStationId() {
         if (stationId != null) return stationId;
         String token = getAccessToken();
@@ -106,6 +127,7 @@ public class SolarmanService {
     }
 
     // 3. Get Real Data (PYTHON LOGIC ADAPTATION)
+
     public List<ChartDataPoint> getRealData() {
         Long myStationId = getStationId();
         if (myStationId == null) return new ArrayList<>();
@@ -116,21 +138,18 @@ public class SolarmanService {
             RestTemplate restTemplate = new RestTemplate();
             String url = apiUrl + "/station/v1.0/history?language=en";
 
-            // PYTHON LOGIC: "start_date = now.strftime('%Y-%m-01')"
-            // We want last 7 days, so we adapt slightly, but keep the STRING format.
             LocalDate today = LocalDate.now();
-            LocalDate weekAgo = today.minusDays(6); // Last 7 days including today
+            LocalDate weekAgo = today.minusDays(6);
 
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             String startDateStr = weekAgo.format(fmt);
             String endDateStr = today.format(fmt);
 
-            // Build Request Body (Matching Python)
             Map<String, Object> body = new HashMap<>();
             body.put("stationId", myStationId);
-            body.put("startTime", startDateStr); // Sending STRING "2026-02-01"
-            body.put("endTime", endDateStr);     // Sending STRING "2026-02-07"
-            body.put("timeType", 2);             // 2 = Daily Stats
+            body.put("startTime", startDateStr);
+            body.put("endTime", endDateStr);
+            body.put("timeType", 2);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
@@ -139,14 +158,26 @@ public class SolarmanService {
             System.out.println("📤 Requesting: " + startDateStr + " to " + endDateStr);
 
             Map response = restTemplate.postForObject(url, entity, Map.class);
-            // System.out.println("📥 Response: " + response); // Uncomment to debug
 
             if (response != null && Boolean.TRUE.equals(response.get("success"))) {
                 List<Map> dataList = (List<Map>) response.get("stationDataItems");
 
                 if (dataList != null) {
+                    // ✅ Get the first solar device - match your actual device types
+                    Device device = deviceRepository.findAll().stream()
+                            .filter(d -> d.getType() != null && (
+                                    d.getType().toUpperCase().contains("SOLAR") ||
+                                            d.getType().toUpperCase().contains("PANEL") ||
+                                            d.getType().toUpperCase().contains("INVERTER")
+                            ))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (device == null) {
+                        System.err.println("⚠️ No solar device found in database. Skipping save.");
+                    }
+
                     for (Map item : dataList) {
-                        // Extract Value
                         double val = 0.0;
                         if (item.get("generationValue") != null) {
                             val = Double.parseDouble(item.get("generationValue").toString());
@@ -154,23 +185,79 @@ public class SolarmanService {
                             val = Double.parseDouble(item.get("value").toString());
                         }
 
-                        // Extract Date from integers (Python: year/month/day)
                         String dayLabel = "Unk";
+                        LocalDateTime timestamp = LocalDateTime.now();
+
                         if (item.containsKey("day") && item.containsKey("month")) {
                             int d = Integer.parseInt(item.get("day").toString());
                             int m = Integer.parseInt(item.get("month").toString());
                             int y = Integer.parseInt(item.get("year").toString());
                             LocalDate date = LocalDate.of(y, m, d);
-                            dayLabel = date.getDayOfWeek().name().substring(0, 3); // "MON"
+                            timestamp = date.atStartOfDay();
+                            dayLabel = date.format(DateTimeFormatter.ofPattern("MMM dd"));
                         }
 
-                        chartData.add(new ChartDataPoint(dayLabel, val, val * 0.4));
+                        // --- CHANGED LOGIC START ---
+                        double consumed = 0.0;
+
+                        // 1. Check if we ALREADY have this data in the database
+                        if (device != null) {
+                            LocalDateTime dayStart = timestamp;
+                            LocalDateTime dayEnd = timestamp.plusDays(1);
+
+                            List<EnergyReading> existingReadings = energyReadingRepository
+                                    .findByDeviceAndDateRange(device.getId(), dayStart, dayEnd);
+
+                            if (!existingReadings.isEmpty()) {
+                                // EXISTING DATA: Use the saved value so the graph doesn't change
+                                consumed = existingReadings.get(0).getConsumedKwh();
+                                System.out.println("✅ Using existing DB value for " + dayLabel + ": " + consumed);
+                            } else {
+                                // NEW DATA: Calculate random ONCE and save it
+                                consumed = val * (0.6 + Math.random() * 0.4);
+
+                                EnergyReading reading = new EnergyReading(device, val, consumed, timestamp);
+                                energyReadingRepository.save(reading);
+                                System.out.println("💾 Saved NEW reading: " + dayLabel + " -> " + consumed);
+                            }
+                        }
+                        // --- CHANGED LOGIC END ---
+
+                        chartData.add(new ChartDataPoint(dayLabel, val, consumed));
                     }
                 }
             }
         } catch (Exception e) {
             System.err.println("❌ Fetch Failed: " + e.getMessage());
+            e.printStackTrace();
         }
+
         return chartData;
+    }
+
+    // ✅ NEW: Get data from database instead of API
+    @Cacheable(value = "energyData", key = "#userId + '-' + #daysBack", unless = "#result.isEmpty()")
+    public List<ChartDataPoint> getDataFromDatabase(Long userId, int daysBack) {
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusDays(daysBack);
+
+        List<EnergyReading> readings = energyReadingRepository.findByUserAndDateRange(
+                userId, startDate, endDate
+        );
+
+        if (readings.isEmpty()) {
+            System.out.println("⚠️ No readings found in database, fetching from API...");
+            return getRealData(); // Fallback to API if DB is empty
+        }
+
+        System.out.println("✅ Returning " + readings.size() + " readings from database");
+
+        return readings.stream()
+                .map(r -> new ChartDataPoint(
+                        r.getTimestamp().format(DateTimeFormatter.ofPattern("MMM dd")),
+                        r.getGeneratedKwh(),
+                        r.getConsumedKwh()
+                ))
+                .collect(Collectors.toList());
     }
 }

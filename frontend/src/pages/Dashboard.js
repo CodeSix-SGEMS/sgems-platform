@@ -1,47 +1,65 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { FaBolt, FaServer, FaUserCheck, FaSolarPanel, FaLeaf, FaDollarSign } from 'react-icons/fa';
+// Ensure FaSyncAlt is imported here
+import { FaBolt, FaServer, FaUserCheck, FaSolarPanel, FaLeaf, FaDollarSign, FaSyncAlt } from 'react-icons/fa';
 import EnergyChart from '../components/EnergyChart';
+import WeatherWidget from '../components/WeatherWidget';
+
+const API_BASE_URL = 'http://localhost:8080';
 
 function Dashboard() {
     const { user } = useContext(AuthContext);
     const [stats, setStats] = useState({});
-    const [chartData, setChartData] = useState([]); // <--- New State
+    const [chartData, setChartData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedDays, setSelectedDays] = useState(7);
 
-    useEffect(() => {
+    // 1. Move loadData OUT here so the button can use it
+    const loadData = async () => {
         if (!user) return;
-        fetchStats();
-        fetchChartData(); // <--- Fetch Chart
-    }, [user]);
 
-    const fetchStats = async () => {
-        const url = user.role === 'ADMIN'
-            ? 'http://localhost:8080/api/stats'
-            : `http://localhost:8080/api/stats/user/${user.id}`;
+        console.log("🔄 Loading data...");
+        setLoading(true);
 
+        // Fetch stats
         try {
-            const response = await fetch(url);
-            if (response.ok) setStats(await response.json());
-        } catch (error) { console.error("Stats Error", error); }
-    };
+            const statsUrl = user.role === 'ADMIN' ? `${API_BASE_URL}/api/stats` : `${API_BASE_URL}/api/stats/user/${user.id}`;
+            const statsRes = await fetch(statsUrl);
+            if (statsRes.ok) setStats(await statsRes.json());
+        } catch (err) {
+            console.error("Stats error:", err);
+        }
 
-    // New Function: Fetch Chart Data from Backend
-    const fetchChartData = async () => {
+        // Fetch chart
         try {
-            // We tell the backend who we are (ADMIN or USER) so it scales the numbers
-            const response = await fetch(`http://localhost:8080/api/stats/chart?role=${user.role}`);
-            if (response.ok) {
-                setChartData(await response.json());
+            const chartUrl = `${API_BASE_URL}/api/stats/chart?role=${user.role}&days=${selectedDays}`;
+            console.log("📊 Fetching:", chartUrl);
+            const chartRes = await fetch(chartUrl);
+            if (chartRes.ok) {
+                const data = await chartRes.json();
+                console.log("✅ Got data:", data);
+                setChartData(data);
+                setError(null);
+            } else {
+                setError("Failed to load chart");
             }
-        } catch (error) { console.error("Chart Error", error); }
+        } catch (err) {
+            console.error("Chart error:", err);
+            setError("Failed to load chart");
+        }
+
+        setLoading(false);
     };
 
-    // ... (Keep your adminCards and userCards definitions exactly the same) ...
-    // ... (Keep the cardsToShow logic) ...
+    // 2. useEffect now just calls the function above
+    useEffect(() => {
+        loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, selectedDays]);
 
-    // --- COPY PASTE YOUR EXISTING CARD DEFINITIONS HERE ---
     const adminCards = [
-        { title: "System Status", value: stats.systemStatus || "Online", color: "success", icon: <FaServer /> },
+        { title: "System Status", value: stats.systemStatus || "Offline", color: "success", icon: <FaServer /> },
         { title: "Active Users", value: stats.activeUsers || 0, color: "primary", icon: <FaUserCheck /> },
         { title: "Total Energy Saved", value: stats.energySaved || "0 kWh", color: "warning", icon: <FaBolt /> },
         { title: "Total Devices", value: stats.connectedDevices || 0, color: "info", icon: <FaSolarPanel /> },
@@ -54,41 +72,78 @@ function Dashboard() {
         { title: "Est. Savings", value: stats.netSavings || "$0.00", color: "warning", icon: <FaDollarSign /> },
     ];
 
-    const cardsToShow = user.role === 'ADMIN' ? adminCards : userCards;
+    const cardsToShow = user?.role === 'ADMIN' ? adminCards : userCards;
+
+    if (!user) return <div>Loading...</div>;
 
     return (
         <div className="container-fluid">
-            <h2 className="mb-4">{user.role === 'ADMIN' ? 'System Overview' : 'My Home Energy'}</h2>
-            <p className="text-muted">Welcome back, {user?.fullName}. Here is your summary.</p>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                {/* Header Row with Weather Widget */}
+                <div className="row align-items-center mb-4">
+                    <div className="col-md-8">
+                        <h2 className="mb-1 fw-bold text-dark">
+                            {user.role === 'ADMIN' ? 'System Overview' : 'My Home Energy'}
+                        </h2>
+                        <p className="text-muted mb-0">Welcome back, {user.fullName}. Here's what's happening today.</p>
+                    </div>
+                    <div className="col-md-4">
+                        <WeatherWidget />
+                    </div>
+                </div>
 
-            {/* Stat Cards Row */}
+                {/* 3. ADD THIS BUTTON HERE */}
+                <button
+                    className="btn btn-primary d-flex align-items-center gap-2"
+                    onClick={loadData}
+                    disabled={loading}
+                >
+                    <FaSyncAlt className={loading ? "fa-spin" : ""} />
+                    Refresh Data
+                </button>
+
+            </div>
+
+            {error && <div className="alert alert-danger">{error}</div>}
+
             <div className="row g-4 mb-5">
-                {cardsToShow.map((stat, index) => (
-                    <div key={index} className="col-md-3">
+                {cardsToShow.map((stat, idx) => (
+                    <div key={idx} className="col-md-3">
                         <div className={`card shadow-sm border-start border-4 border-${stat.color} h-100`}>
                             <div className="card-body d-flex align-items-center justify-content-between">
                                 <div>
                                     <h6 className="text-muted fw-normal mb-1">{stat.title}</h6>
                                     <h3 className="mb-0 fw-bold">{stat.value}</h3>
                                 </div>
-                                <div className={`text-${stat.color} fs-1 opacity-25`}>
-                                    {stat.icon}
-                                </div>
+                                <div className={`text-${stat.color} fs-1 opacity-25`}>{stat.icon}</div>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Analytics Section */}
             <div className="card shadow-sm">
-                <div className="card-header bg-white fw-bold">
-                    <FaBolt className="me-2 text-warning" />
-                    {user.role === 'ADMIN' ? 'Global Grid Load (Live)' : 'My Energy Consumption History (Live)'}
+                <div className="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <FaBolt className="me-2 text-warning" />
+                        My Energy History
+                    </div>
+                    <div className="btn-group">
+                        <button className={`btn btn-sm ${selectedDays === 7 ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setSelectedDays(7)}>7 Days</button>
+                        <button className={`btn btn-sm ${selectedDays === 14 ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setSelectedDays(14)}>14 Days</button>
+                        <button className={`btn btn-sm ${selectedDays === 30 ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setSelectedDays(30)}>30 Days</button>
+                    </div>
                 </div>
                 <div className="card-body">
-                    {/* Pass the FETCHED data, not the role */}
-                    <EnergyChart data={chartData} />
+                    {loading ? (
+                        <div className="text-center py-5">
+                            <div className="spinner-border"></div>
+                        </div>
+                    ) : chartData.length === 0 ? (
+                        <div className="text-center py-5">No data</div>
+                    ) : (
+                        <EnergyChart data={chartData} />
+                    )}
                 </div>
             </div>
         </div>
