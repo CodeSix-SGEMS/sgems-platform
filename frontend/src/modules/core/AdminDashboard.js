@@ -24,7 +24,7 @@ function AdminDashboard() {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('http://localhost:8080/api/users');
+            const res = await fetch('/api/users');
             if (res.ok) setUsers(await res.json());
         } catch (error) { console.error(error); }
     };
@@ -34,7 +34,7 @@ function AdminDashboard() {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/users/add', {
+            const res = await fetch('/api/users/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fullName, email, password, role })
@@ -74,7 +74,7 @@ function AdminDashboard() {
 
         if (modalAction === 'DELETE') {
             try {
-                const res = await fetch(`http://localhost:8080/api/users/${selectedUser.id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/users/${selectedUser.id}`, { method: 'DELETE' });
                 if(res.ok) {
                     setUsers(users.filter(u => u.id !== selectedUser.id));
                     toast.success("User deleted. 🗑️");
@@ -85,7 +85,7 @@ function AdminDashboard() {
         else if (modalAction === 'ROLE') {
             const newRole = selectedUser.role === 'ADMIN' ? 'USER' : 'ADMIN';
             try {
-                const res = await fetch(`http://localhost:8080/api/users/${selectedUser.id}/role?role=${newRole}`, { method: 'PUT' });
+                const res = await fetch(`/api/users/${selectedUser.id}/role?role=${newRole}`, { method: 'PUT' });
                 if(res.ok) {
                     setUsers(users.map(u => u.id === selectedUser.id ? { ...u, role: newRole } : u));
                     toast.info(`Role updated to ${newRole} 🛡️`);

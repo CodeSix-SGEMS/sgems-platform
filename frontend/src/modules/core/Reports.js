@@ -29,14 +29,14 @@ function Reports() {
     const fetchData = () => {
         // A. Fetch Site Energy Data with date range
         const daysParam = dateRange === 'custom' ? 30 : dateRange; // Default to 30 for custom
-        fetch(`http://localhost:8080/api/stats/chart?role=ADMIN&days=${daysParam}`)
+        fetch(`/api/stats/chart?role=ADMIN&days=${daysParam}`)
             .then(res => res.json())
             .then(data => setEnergyData(data))
             .catch(err => console.error("Energy fetch failed", err));
 
         // B. Fetch User Data (ONLY if Admin)
         if (user && user.role === 'ADMIN') {
-            fetch(`http://localhost:8080/api/users`)
+            fetch(`/api/users`)
                 .then(res => res.json())
                 .then(data => setUserData(data))
                 .catch(err => console.error("User fetch failed", err));

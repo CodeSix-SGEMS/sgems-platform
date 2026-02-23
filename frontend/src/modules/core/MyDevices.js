@@ -16,7 +16,7 @@ function MyDevices() {
     // Fetch Devices
     useEffect(() => {
         if (user) {
-            fetch(`http://localhost:8080/api/devices/my-devices/${user.id}`)
+            fetch(`/api/devices/my-devices/${user.id}`)
                 .then(res => {
                     if (!res.ok) throw new Error("API Error"); // Catch 404/500
                     return res.json();
@@ -50,7 +50,7 @@ function MyDevices() {
 
         setLoading(true); // Disable button
         try {
-            const response = await fetch(`http://localhost:8080/api/devices/add?userId=${user.id}`, {
+            const response = await fetch(`/api/devices/add?userId=${user.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -81,7 +81,7 @@ function MyDevices() {
     const toggleStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
         try {
-            await fetch(`http://localhost:8080/api/devices/${id}/status?status=${newStatus}`, { method: 'PUT' });
+            await fetch(`/api/devices/${id}/status?status=${newStatus}`, { method: 'PUT' });
 
             setDevices(devices.map(d => d.id === id ? { ...d, status: newStatus } : d));
 
@@ -98,7 +98,7 @@ function MyDevices() {
         if (!window.confirm("Are you sure you want to remove this device?")) return;
 
         try {
-            await fetch(`http://localhost:8080/api/devices/${id}`, { method: 'DELETE' });
+            await fetch(`/api/devices/${id}`, { method: 'DELETE' });
             setDevices(devices.filter(d => d.id !== id));
             toast.success("Device removed.");
         } catch (error) {
