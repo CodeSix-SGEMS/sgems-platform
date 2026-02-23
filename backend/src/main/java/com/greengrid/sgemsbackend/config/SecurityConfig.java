@@ -36,7 +36,11 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:3000")); // Your React Port
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",                 // For your laptop development
+                "http://192.168.1.119",                  // For your local network testing
+                "https://sgems.sushenjayasuriya.org.lk"  // For the public internet!
+        ));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("*"));
         source.registerCorsConfiguration("/**", config);
