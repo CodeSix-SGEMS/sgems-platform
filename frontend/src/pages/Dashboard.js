@@ -5,7 +5,7 @@ import { FaBolt, FaServer, FaUserCheck, FaSolarPanel, FaLeaf, FaDollarSign, FaSy
 import EnergyChart from '../components/EnergyChart';
 import WeatherWidget from '../components/WeatherWidget';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = '';
 
 function Dashboard() {
     const { user } = useContext(AuthContext);
