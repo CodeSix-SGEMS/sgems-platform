@@ -39,7 +39,7 @@ public class LoginController {
             if (passwordEncoder.matches(password, user.getPassword())) {
                 return ResponseEntity.ok(Map.of(
                         "message", "Login successful",
-                        "id", user.getId(),            // <--- ADD THIS LINE
+                        "id", user.getId(),
                         "role", user.getRole(),
                         "fullName", user.getFullName()
                 ));
@@ -47,5 +47,26 @@ public class LoginController {
         }
 
         return ResponseEntity.status(401).body(Map.of("message", "Invalid email or password"));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User newUser) {
+        // 1. Check if the email already exists in the database
+        if (userRepository.findByEmail(newUser.getEmail()).isPresent()) {
+            return ResponseEntity.status(400).body(Map.of("message", "Email is already taken"));
+        }
+
+        // 2. Hash the password before saving it (CRITICAL for security)
+        newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+
+        // 3. Assign a default role for new signups
+        if (newUser.getRole() == null || newUser.getRole().isEmpty()) {
+            newUser.setRole("USER"); // or "CUSTOMER" depending on your system
+        }
+
+        // 4. Save the new user to the MySQL database
+        userRepository.save(newUser);
+
+        return ResponseEntity.ok(Map.of("message", "Registration successful"));
     }
 }

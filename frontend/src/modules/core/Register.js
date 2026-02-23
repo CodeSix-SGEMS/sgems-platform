@@ -12,7 +12,7 @@ function Register() {
         const payload = { ...formData, role: 'USER' };
 
         try {
-            const response = await fetch('/api/auth/register', {
+            const response = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
