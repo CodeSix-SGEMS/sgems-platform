@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { FaSolarPanel, FaLeaf, FaChartLine, FaBolt, FaCloud, FaCog } from 'react-icons/fa';
+
 
 function LandingPage() {
     const [scrollY, setScrollY] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
+    const { user } = useContext(AuthContext);
 
     useEffect(() => {
         setIsVisible(true);
@@ -43,7 +47,9 @@ function LandingPage() {
                         <a href="#features" style={styles.navLink}>Features</a>
                         <a href="#how" style={styles.navLink}>How It Works</a>
                         <a href="#stats" style={styles.navLink}>Impact</a>
-                        <Link to="/login" style={styles.navLoginBtn}>Login</Link>
+                        <Link to={user ? "/dashboard" : "/login"} style={styles.navLoginBtn}>
+                            {user ? "Go to Dashboard" : "Login"}
+                        </Link>
                     </div>
                 </div>
             </nav>

@@ -10,18 +10,22 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;         // e.g., "Roof Solar Panel"
-    private String type;         // "SOLAR_INVERTER", "SMART_METER", "WIND_TURBINE"
-    private String serialNumber; // Unique ID from the hardware
-    private String status;       // "ONLINE", "OFFLINE", "MAINTENANCE"
+    private String name;         // e.g., "Roof Solar Panel" (user-defined friendly name)
+    private String type;         // copied from InventoryItem.name at registration time
+    private String serialNumber; // must match an InventoryItem serial
+    private String status;       // "ONLINE", "OFFLINE"
 
-    // Link this device to a specific user
-    // Many devices can belong to One user
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User owner;
 
+    // ✅ Link back to the inventory item this device was registered from
+    @ManyToOne
+    @JoinColumn(name = "inventory_item_id", nullable = true)
+    private InventoryItem inventoryItem;
+
     // --- Getters and Setters ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -39,4 +43,7 @@ public class Device {
 
     public User getOwner() { return owner; }
     public void setOwner(User owner) { this.owner = owner; }
+
+    public InventoryItem getInventoryItem() { return inventoryItem; }
+    public void setInventoryItem(InventoryItem inventoryItem) { this.inventoryItem = inventoryItem; }
 }

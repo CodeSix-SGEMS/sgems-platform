@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { FaBolt, FaServer, FaUserCheck, FaSolarPanel, FaLeaf, FaDollarSign, FaSyncAlt } from 'react-icons/fa';
 import EnergyChart from '../components/EnergyChart';
 import WeatherWidget from '../components/WeatherWidget';
+import DevicePieChart from '../components/DevicePieChart';
 
 const API_BASE_URL = '';
 
@@ -10,11 +11,11 @@ function Dashboard() {
     const { user } = useContext(AuthContext);
     const [stats, setStats] = useState({});
     const [chartData, setChartData] = useState([]);
+    const [deviceData, setDeviceData] = useState([]); // ✅ moved INSIDE the component
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedDays, setSelectedDays] = useState(7);
 
-    // 1. Move loadData OUT here so the button can use it
     const loadData = async () => {
         if (!user) return;
 
@@ -28,6 +29,19 @@ function Dashboard() {
             if (statsRes.ok) setStats(await statsRes.json());
         } catch (err) {
             console.error("Stats error:", err);
+        }
+
+        // Fetch device pie data
+        try {
+            const deviceRes = // Inside loadData(), replace the device fetch with:
+                setDeviceData([
+                    { name: "Solar Panel A", value: 120.5 },
+                    { name: "Inverter B",    value: 98.2  },
+                    { name: "Battery C",     value: 45.0  }
+                ]);
+            if (deviceRes.ok) setDeviceData(await deviceRes.json());
+        } catch (err) {
+            console.error("Device chart error:", err);
         }
 
         // Fetch chart
@@ -51,7 +65,6 @@ function Dashboard() {
         setLoading(false);
     };
 
-    // 2. useEffect now just calls the function above
     useEffect(() => {
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,7 +111,6 @@ function Dashboard() {
                     position: relative;
                 }
 
-                /* Subtle ambient blobs */
                 .gg-dash-blob {
                     position: fixed;
                     border-radius: 50%;
@@ -119,7 +131,6 @@ function Dashboard() {
 
                 .gg-dash-content { position: relative; z-index: 1; }
 
-                /* Header row */
                 .gg-dash-header {
                     display: flex;
                     align-items: flex-start;
@@ -128,8 +139,6 @@ function Dashboard() {
                     gap: 24px;
                     flex-wrap: wrap;
                 }
-
-                .gg-dash-title-area {}
 
                 .gg-dash-eyebrow {
                     font-size: 10.5px;
@@ -174,7 +183,6 @@ function Dashboard() {
                     flex-wrap: wrap;
                 }
 
-                /* Refresh button */
                 .gg-refresh-btn {
                     display: flex;
                     align-items: center;
@@ -201,7 +209,6 @@ function Dashboard() {
                 .gg-spin { animation: ggSpin 0.8s linear infinite; }
                 @keyframes ggSpin { to { transform: rotate(360deg); } }
 
-                /* Error alert */
                 .gg-alert {
                     padding: 12px 16px;
                     background: rgba(185,64,64,0.08);
@@ -212,14 +219,12 @@ function Dashboard() {
                     margin-bottom: 24px;
                 }
 
-                /* Stat cards */
                 .gg-cards-grid {
                     display: grid;
                     grid-template-columns: repeat(4, 1fr);
                     gap: 18px;
                     margin-bottom: 28px;
                 }
-
                 @media (max-width: 1200px) { .gg-cards-grid { grid-template-columns: repeat(2, 1fr); } }
                 @media (max-width: 600px)  { .gg-cards-grid { grid-template-columns: 1fr; } }
 
@@ -249,8 +254,6 @@ function Dashboard() {
                     transform: translateY(-3px);
                     box-shadow: 0 10px 28px rgba(26,58,42,0.13);
                 }
-
-                /* Accent top bar */
                 .gg-stat-card::before {
                     content: '';
                     position: absolute;
@@ -292,7 +295,6 @@ function Dashboard() {
                     margin-top: 2px;
                 }
 
-                /* Chart card */
                 .gg-chart-card {
                     background: rgba(255,255,255,0.88);
                     backdrop-filter: blur(12px);
@@ -326,7 +328,6 @@ function Dashboard() {
                     font-size: 13px;
                 }
 
-                /* Day toggle pills */
                 .gg-day-toggle {
                     display: flex;
                     background: rgba(168,213,181,0.15);
@@ -355,11 +356,8 @@ function Dashboard() {
                     box-shadow: 0 2px 8px rgba(26,58,42,0.2);
                 }
 
-                .gg-chart-body {
-                    padding: 24px;
-                }
+                .gg-chart-body { padding: 24px; }
 
-                /* Loading spinner */
                 .gg-loading {
                     display: flex;
                     align-items: center;
@@ -386,9 +384,17 @@ function Dashboard() {
                     font-size: 14px;
                     font-weight: 300;
                 }
+
+                /* Two-column layout for the charts row */
+                .gg-charts-row {
+                    display: grid;
+                    grid-template-columns: 1fr 380px;
+                    gap: 22px;
+                    align-items: start;
+                }
+                @media (max-width: 1100px) { .gg-charts-row { grid-template-columns: 1fr; } }
             `}</style>
 
-            {/* Ambient blobs */}
             <div className="gg-dash-blob gg-dash-blob-1" />
             <div className="gg-dash-blob gg-dash-blob-2" />
 
@@ -407,11 +413,7 @@ function Dashboard() {
 
                     <div className="gg-dash-header-right">
                         <WeatherWidget />
-                        <button
-                            className="gg-refresh-btn"
-                            onClick={loadData}
-                            disabled={loading}
-                        >
+                        <button className="gg-refresh-btn" onClick={loadData} disabled={loading}>
                             <FaSyncAlt className={loading ? "gg-spin" : ""} />
                             Refresh Data
                         </button>
@@ -423,25 +425,18 @@ function Dashboard() {
                 {/* Stat Cards */}
                 <div className="gg-cards-grid">
                     {cardsToShow.map((stat, idx) => (
-                        <div
-                            key={idx}
-                            className="gg-stat-card"
-                            style={{ '--accent': stat.accent }}
-                        >
+                        <div key={idx} className="gg-stat-card">
                             <style>{`.gg-stat-card:nth-child(${idx + 1})::before { background: ${stat.accent}; }`}</style>
                             <div className="gg-stat-card-inner">
                                 <div>
                                     <div className="gg-stat-label">{stat.title}</div>
                                     <div className="gg-stat-value">{stat.value}</div>
                                 </div>
-                                <div
-                                    className="gg-stat-icon-wrap"
-                                    style={{
-                                        background: `${stat.accent}15`,
-                                        color: stat.accent,
-                                        border: `1px solid ${stat.accent}22`
-                                    }}
-                                >
+                                <div className="gg-stat-icon-wrap" style={{
+                                    background: `${stat.accent}15`,
+                                    color: stat.accent,
+                                    border: `1px solid ${stat.accent}22`
+                                }}>
                                     {stat.icon}
                                 </div>
                             </div>
@@ -449,38 +444,59 @@ function Dashboard() {
                     ))}
                 </div>
 
-                {/* Chart */}
-                <div className="gg-chart-card">
-                    <div className="gg-chart-header">
-                        <div className="gg-chart-title">
-                            <FaBolt className="gg-chart-title-icon" />
-                            My Energy History
+                {/* ✅ Charts row — energy history + pie side by side */}
+                <div className="gg-charts-row">
+
+                    {/* Energy History */}
+                    <div className="gg-chart-card">
+                        <div className="gg-chart-header">
+                            <div className="gg-chart-title">
+                                <FaBolt className="gg-chart-title-icon" />
+                                My Energy History
+                            </div>
+                            <div className="gg-day-toggle">
+                                {[7, 14, 30].map(d => (
+                                    <button
+                                        key={d}
+                                        className={`gg-day-btn${selectedDays === d ? ' active' : ''}`}
+                                        onClick={() => setSelectedDays(d)}
+                                    >
+                                        {d} Days
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <div className="gg-day-toggle">
-                            {[7, 14, 30].map(d => (
-                                <button
-                                    key={d}
-                                    className={`gg-day-btn${selectedDays === d ? ' active' : ''}`}
-                                    onClick={() => setSelectedDays(d)}
-                                >
-                                    {d} Days
-                                </button>
-                            ))}
+                        <div className="gg-chart-body">
+                            {loading ? (
+                                <div className="gg-loading">
+                                    <div className="gg-loading-ring" />
+                                    Loading data…
+                                </div>
+                            ) : chartData.length === 0 ? (
+                                <div className="gg-no-data">No data available for this period</div>
+                            ) : (
+                                <EnergyChart data={chartData} />
+                            )}
                         </div>
                     </div>
 
-                    <div className="gg-chart-body">
-                        {loading ? (
-                            <div className="gg-loading">
-                                <div className="gg-loading-ring" />
-                                Loading data…
+                    {/* ✅ Device Pie Chart — sibling, NOT nested inside energy chart */}
+                    <div className="gg-chart-card">
+                        <div className="gg-chart-header">
+                            <div className="gg-chart-title">
+                                <FaSolarPanel className="gg-chart-title-icon" />
+                                Energy by Device
                             </div>
-                        ) : chartData.length === 0 ? (
-                            <div className="gg-no-data">No data available for this period</div>
-                        ) : (
-                            <EnergyChart data={chartData} />
-                        )}
+                        </div>
+                        <div className="gg-chart-body">
+                            {deviceData.length === 0 ? (
+                                <div className="gg-no-data">No device data</div>
+                            ) : (
+                                <DevicePieChart data={deviceData} />
+                            )}
+                        </div>
                     </div>
+
                 </div>
             </div>
         </>

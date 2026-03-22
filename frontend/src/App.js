@@ -5,7 +5,8 @@ import Login from './modules/core/Login';
 import AdminDashboard from './modules/core/AdminDashboard';
 import Layout from './components/Layout';
 import MyDevices from './modules/core/MyDevices';
-import LandingPage from './modules/core/LandingPage'; // <--- Import
+import LandingPage from './modules/core/LandingPage';
+//import BillingPage from "./modules/billing/BillingPage";// <--- Import
 import Register from './modules/core/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -47,7 +48,6 @@ function App() {
                     <Route path="/reports" element={
                         <ProtectedRoute><Reports /></ProtectedRoute>
                     } />
-
 
                 </Routes>
             </Layout>
