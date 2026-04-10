@@ -1,9 +1,11 @@
 package com.greengrid.sgemsbackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users") // This tells H2 to create a table named 'users'
+@Table(name = "users")
 public class User {
 
     @Id
@@ -11,11 +13,14 @@ public class User {
     private Long id;
 
     private String email;
-    private String password;
-    private String fullName;
-    private String role; // e.g., "ADMIN", "USER"
 
-    // --- Getters and Setters (IntelliJ can generate these, but here they are) ---
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
+
+    private String fullName;
+    private String role; // "ADMIN" or "USER"
+
+    // --- Getters and Setters ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

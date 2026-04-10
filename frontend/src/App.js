@@ -1,19 +1,21 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // <--- Import Navigate
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Login from './modules/core/Login';
 import AdminDashboard from './modules/core/AdminDashboard';
 import Layout from './components/Layout';
 import MyDevices from './modules/core/MyDevices';
 import LandingPage from './modules/core/LandingPage';
-//import BillingPage from "./modules/billing/BillingPage";// <--- Import
+import Maintenance from './modules/maintenance/Maintenance';
+import Billing from './modules/billing/Billing';
 import Register from './modules/core/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
-import Inventory from './modules/inventory/Inventory'; // <--- Import
+import Inventory from './modules/inventory/Inventory';
 import Reports from './modules/core/Reports';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Alerts from "./modules/alerts/Alerts";
 
 function App() {
     return (
@@ -47,6 +49,18 @@ function App() {
                     {/* The Shared Reporting Route */}
                     <Route path="/reports" element={
                         <ProtectedRoute><Reports /></ProtectedRoute>
+                    } />
+
+                    <Route path="/maintenance" element={
+                        <ProtectedRoute><Maintenance /></ProtectedRoute>
+                    } />
+
+                    <Route path="/billing" element={
+                        <ProtectedRoute><Billing /></ProtectedRoute>
+                    } />
+
+                    <Route path="/alerts" element={
+                        <ProtectedRoute><Alerts /></ProtectedRoute>
                     } />
 
                 </Routes>

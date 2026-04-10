@@ -4,6 +4,7 @@ import { FaBolt, FaServer, FaUserCheck, FaSolarPanel, FaLeaf, FaDollarSign, FaSy
 import EnergyChart from '../components/EnergyChart';
 import WeatherWidget from '../components/WeatherWidget';
 import DevicePieChart from '../components/DevicePieChart';
+import EnergyFlowChart from '../components/EnergyFlowChart'; // ✅ Added the Import here
 
 const API_BASE_URL = '';
 
@@ -442,6 +443,18 @@ function Dashboard() {
                             </div>
                         </div>
                     ))}
+                </div>
+
+                {/* ========================================== */}
+                {/* 🌟 THE NEW FLOW CHART IS INSERTED HERE 🌟 */}
+                {/* ========================================== */}
+                <div style={{ marginBottom: '28px' }}>
+                    <EnergyFlowChart
+                        solarKw={stats.currentSolar || 0}
+                        consumptionKw={stats.currentConsumption || 0}
+                        batteryPct={stats.batteryLevel || 0}
+                        gridKw={stats.gridPower || 0}
+                    />
                 </div>
 
                 {/* ✅ Charts row — energy history + pie side by side */}

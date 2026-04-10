@@ -46,6 +46,12 @@ public class StatsController {
         // Format to 1 decimal place (e.g., "150.5 kWh")
         response.put("energySaved", String.format("%.1f kWh", energySaved));
 
+        // ==========================================
+        // 🌟 ADD THESE TWO LINES FOR THE FLOW CHART
+        // ==========================================
+        Map<String, Object> liveData = solarmanService.getLiveSystemStats();
+        response.putAll(liveData);
+
         return response;
     }
 

@@ -47,9 +47,6 @@ public class SecurityConfig {
         return new CorsFilter(source);
     }
 
-    // Add these imports at the top if they are missing:
-    // import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-    // import org.springframework.security.crypto.password.PasswordEncoder;
 
     @Bean
     public PasswordEncoder passwordEncoder() {

@@ -153,7 +153,20 @@ function MyDevices() {
                 @keyframes dvCardIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
                 .gg-dv-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
                 .gg-dv-icon-wrap { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-                .gg-dv-delete { width:34px; height:34px; border-radius:8px; background:rgba(185,64,64,0.07); border:1px solid rgba(185,64,64,0.2); color:#c0392b; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; transition:all 0.18s; flex-shrink:0; }
+               .gg-dv-delete {
+                width: 36px; height: 36px;
+                border-radius: 8px;
+                background: rgba(185,64,64,0.1);
+                border: 1px solid rgba(185,64,64,0.25);
+                color: #c0392b;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 15px;
+                cursor: pointer;
+                transition: all 0.18s;
+                flex-shrink: 0;
+                line-height: 1;
+                padding: 0;
+                }
                 .gg-dv-delete:hover { background:rgba(185,64,64,0.14); transform:scale(1.08); }
                 .gg-dv-name { font-size:15px; font-weight:500; color:var(--forest); margin-bottom:3px; }
                 .gg-dv-serial { font-size:11.5px; color:#9ab5a5; font-weight:400; margin-bottom:14px; letter-spacing:0.5px; }
@@ -208,6 +221,18 @@ function MyDevices() {
                 .gg-del-confirm:disabled { opacity:0.6; cursor:not-allowed; }
                 .gg-spin { width:13px; height:13px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:ggSpin 0.7s linear infinite; display:inline-block; }
                 @keyframes ggSpin { to{transform:rotate(360deg)} }
+                
+                /* Force SVGs inside your custom buttons to render */
+                .gg-dv-delete svg, 
+                .gg-dv-status svg, 
+                .gg-dv-submit svg, 
+                .gg-del-confirm svg {
+                 display: inline-block !important;
+                 width: 1em !important;
+                 height: 1em !important;
+                 visibility: visible !important;
+                 opacity: 1 !important;
+}
             `}</style>
 
             <div className="gg-dv-blob gg-dv-blob-1" />
@@ -245,7 +270,7 @@ function MyDevices() {
                                                 {getDeviceIcon(device.type)}
                                             </div>
                                             <button className="gg-dv-delete" onClick={() => confirmDelete(device)}>
-                                                <FaTrash />
+                                                <FaTrash size={14} style={{ display: 'inline-block', visibility: 'visible', fill: 'currentColor' }} />
                                             </button>
                                         </div>
                                         <div className="gg-dv-name">{device.name}</div>

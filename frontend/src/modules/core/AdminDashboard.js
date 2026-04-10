@@ -6,6 +6,7 @@ import {
     FaSolarPanel, FaBolt, FaBatteryFull, FaTachometerAlt, FaUnlink
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import EnergyFlowChart from '../../components/EnergyFlowChart';
 
 function AdminDashboard() {
     const { user } = useContext(AuthContext);

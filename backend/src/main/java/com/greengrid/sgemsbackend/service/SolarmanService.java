@@ -235,6 +235,60 @@ public class SolarmanService {
         return chartData;
     }
 
+    // 4. Get Live Real-Time Data for the Flow Chart
+    public Map<String, Object> getLiveSystemStats() {
+        Map<String, Object> liveStats = new HashMap<>();
+
+        // Default safe values
+        liveStats.put("currentSolar", 0.0);
+        liveStats.put("currentConsumption", 0.0);
+        liveStats.put("batteryLevel", 0);
+        liveStats.put("gridPower", 0.0);
+
+        Long myStationId = getStationId();
+        String token = getAccessToken();
+
+        if (myStationId == null || token == null) {
+            return liveStats;
+        }
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String url = apiUrl + "/station/v1.0/realTime?language=en";
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("stationId", myStationId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(token);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+            Map response = restTemplate.postForObject(url, entity, Map.class);
+
+            if (response != null && Boolean.TRUE.equals(response.get("success"))) {
+                System.out.println("Live API Response: " + response);
+
+                // NULL-SAFE CHECKS
+                if (response.get("generationPower") != null) {
+                    liveStats.put("currentSolar", Double.parseDouble(response.get("generationPower").toString()) / 1000.0);
+                }
+                if (response.get("usePower") != null) {
+                    liveStats.put("currentConsumption", Double.parseDouble(response.get("usePower").toString()) / 1000.0);
+                }
+                if (response.get("gridPower") != null) {
+                    liveStats.put("gridPower", Double.parseDouble(response.get("gridPower").toString()) / 1000.0);
+                }
+                if (response.get("batterySoc") != null) {
+                    liveStats.put("batteryLevel", Integer.parseInt(response.get("batterySoc").toString()));
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Live Fetch Failed: " + e.getMessage());
+        }
+
+        return liveStats;
+    }
+
     // ✅ NEW: Get data from database instead of API
     @Cacheable(value = "energyData", key = "#userId + '-' + #daysBack", unless = "#result.isEmpty()")
     public List<ChartDataPoint> getDataFromDatabase(Long userId, int daysBack) {
