@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../../context/AuthContext";
 import "../../App.css";
 
-const API_BASE = "http://localhost:8080/api/alerts";
+const API_BASE = "/api/alerts";   // instead of http://localhost:8080/...
 
 export default function Alerts() {
     const { user } = useContext(AuthContext);
