@@ -3,12 +3,15 @@ package com.greengrid.sgemsbackend.controller;
 import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -70,5 +73,34 @@ public class UserController {
         userRepository.save(user);
 
         return ResponseEntity.ok("Password updated successfully.");
+    }
+
+    @PutMapping("/{id}/email-notifications")
+    public ResponseEntity<?> updateEmailNotifications(@PathVariable Long id, @RequestParam Boolean enabled) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        user.setEmailNotifications(enabled);
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("emailNotifications", enabled));
+    }
+
+    @PutMapping("/{id}/email")
+    public ResponseEntity<?> updateEmail(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        String newEmail = request.get("email");
+        if (newEmail == null || newEmail.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email cannot be empty"));
+        }
+
+        // Check if email is already taken by another user
+        Optional<User> existingUser = userRepository.findByEmail(newEmail);
+        if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email already in use"));
+        }
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        user.setEmail(newEmail);
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Email updated successfully"));
     }
 }

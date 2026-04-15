@@ -20,6 +20,8 @@ public class User {
     private String fullName;
     private String role; // "ADMIN" or "USER"
 
+    private Boolean emailNotifications = true;
+
     // --- Getters and Setters ---
 
     public Long getId() { return id; }
@@ -36,4 +38,7 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public Boolean getEmailNotifications() { return emailNotifications; }
+    public void setEmailNotifications(Boolean emailNotifications) { this.emailNotifications = emailNotifications; }
 }

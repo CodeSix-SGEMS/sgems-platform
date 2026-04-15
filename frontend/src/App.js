@@ -16,6 +16,7 @@ import Reports from './modules/core/Reports';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Alerts from "./modules/alerts/Alerts";
+import Settings from "./modules/core/Settings";
 
 function App() {
     return (
@@ -62,6 +63,8 @@ function App() {
                     <Route path="/alerts" element={
                         <ProtectedRoute><Alerts /></ProtectedRoute>
                     } />
+
+                    <Route path="/settings" element={<Settings />} />
 
                 </Routes>
             </Layout>

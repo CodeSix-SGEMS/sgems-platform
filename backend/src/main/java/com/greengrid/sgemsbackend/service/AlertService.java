@@ -24,13 +24,16 @@ public class AlertService {
     private final AlertRepository alertRepository;
     private final DeletedAlertRepository deletedAlertRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     public AlertService(AlertRepository alertRepository,
                         DeletedAlertRepository deletedAlertRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        EmailService emailService) {
         this.alertRepository = alertRepository;
         this.deletedAlertRepository = deletedAlertRepository;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     // Get all alerts (admin sees all, user sees only own)
@@ -66,8 +69,21 @@ public class AlertService {
         updateEntityFromDTO(alert, dto);
         alert.setUser(user);
         Alert saved = alertRepository.save(alert);
+
+        // Send email notification asynchronously
+        emailService.sendAlertEmail(saved, user);
+
+        // Send to all admin users
+        List<User> admins = userRepository.findByRole("ADMIN");
+        for (User admin : admins) {
+            if (!admin.getId().equals(user.getId())) {
+                emailService.sendAlertEmail(saved, admin);
+            }
+        }
+
         return convertToDTO(saved);
     }
+
 
     // Update – ensure user owns the alert or is admin
     public AlertResponseDTO updateAlert(Long id, AlertRequestDTO dto, Long currentUserId) {

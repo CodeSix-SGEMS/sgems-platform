@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Solar Alert</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        .card { background: white; border-radius: 8px; padding: 20px; max-width: 500px; margin: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .critical { border-left: 5px solid #d9534f; }
+        .high { border-left: 5px solid #f0ad4e; }
+        .medium { border-left: 5px solid #5bc0de; }
+        .low { border-left: 5px solid #5cb85c; }
+        h2 { color: #333; }
+        .detail { margin: 10px 0; }
+        .label { font-weight: bold; width: 120px; display: inline-block; }
+    </style>
+</head>
+<body>
+<div class="card" th:classappend="${alert.severity.toLowerCase()}">
+    <h2>⚡ Solar Alert System</h2>
+    <p>Dear <span th:text="${user.fullName}">User</span>,</p>
+    <p>A new alert has been registered for your solar system.</p>
+
+    <div class="detail"><span class="label">System ID:</span> <span th:text="${alert.systemId}">-</span></div>
+    <div class="detail"><span class="label">Issue:</span> <span th:text="${alert.issue}">-</span></div>
+    <div class="detail"><span class="label">Severity:</span> <span th:text="${alert.severity}">-</span></div>
+    <div class="detail"><span class="label">Status:</span> <span th:text="${alert.status}">-</span></div>
+    <div class="detail"><span class="label">Voltage:</span> <span th:text="${alert.voltage} + 'V'">-</span></div>
+    <div class="detail"><span class="label">Battery:</span> <span th:text="${alert.battery} + '%'">-</span></div>
+
+    <p>Please log in to the SGEMS platform for more details.</p>
+    <hr>
+    <small>This is an automated message. You can disable email notifications in your profile settings.</small>
+</div>
+</body>
+</html>

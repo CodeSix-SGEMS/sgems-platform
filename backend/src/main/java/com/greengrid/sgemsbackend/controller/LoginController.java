@@ -3,7 +3,7 @@ package com.greengrid.sgemsbackend.controller;
 import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder; // Import this
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -14,9 +14,8 @@ import java.util.Optional;
 public class LoginController {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; // Add this
+    private final PasswordEncoder passwordEncoder;
 
-    // Inject PasswordEncoder in the constructor
     public LoginController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -32,16 +31,13 @@ public class LoginController {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
 
-            // SECURITY CHECK:
-            // Use .matches(rawPassword, hashedPassword)
-            // ... inside the if (passwordEncoder.matches(...)) block ...
-
             if (passwordEncoder.matches(password, user.getPassword())) {
                 return ResponseEntity.ok(Map.of(
                         "message", "Login successful",
                         "id", user.getId(),
                         "role", user.getRole(),
-                        "fullName", user.getFullName()
+                        "fullName", user.getFullName(),
+                        "emailNotifications", user.getEmailNotifications()  // ✅ Added this line
                 ));
             }
         }
@@ -51,20 +47,21 @@ public class LoginController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User newUser) {
-        // 1. Check if the email already exists in the database
         if (userRepository.findByEmail(newUser.getEmail()).isPresent()) {
             return ResponseEntity.status(400).body(Map.of("message", "Email is already taken"));
         }
 
-        // 2. Hash the password before saving it (CRITICAL for security)
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
 
-        // 3. Assign a default role for new signups
         if (newUser.getRole() == null || newUser.getRole().isEmpty()) {
-            newUser.setRole("USER"); // or "CUSTOMER" depending on your system
+            newUser.setRole("USER");
         }
 
-        // 4. Save the new user to the MySQL database
+        // Default email notifications to true for new users
+        if (newUser.getEmailNotifications() == null) {
+            newUser.setEmailNotifications(true);
+        }
+
         userRepository.save(newUser);
 
         return ResponseEntity.ok(Map.of("message", "Registration successful"));

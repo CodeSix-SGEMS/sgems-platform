@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {Link, NavLink, useLocation, useNavigate} from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import {
     FaHome, FaSolarPanel, FaFileInvoiceDollar, FaTools,
-    FaExclamationTriangle, FaBoxOpen, FaSignOutAlt, FaFileAlt, FaUsers, FaBolt
+    FaExclamationTriangle, FaBoxOpen, FaSignOutAlt, FaFileAlt, FaUsers, FaBolt, FaCog
 } from 'react-icons/fa';
 
 function Sidebar() {
@@ -330,6 +330,12 @@ function Sidebar() {
                             <span className="gg-sb-suffix">(Senithu)</span>
                         </Link>
                     )}
+
+                    {/* Settings link */}
+                    <Link to="/settings" className={`gg-sb-link${isActive('/settings') ? ' active' : ''}`}>
+                        <span className="gg-sb-icon"><FaCog /></span>
+                        <span className="gg-sb-label">Settings</span>
+                    </Link>
 
                     {/* 6. Analytics section */}
                     <div className="gg-sb-divider" />

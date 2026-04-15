@@ -3,7 +3,7 @@ import { AuthContext } from '../../context/AuthContext';
 import {
     FaUserPlus, FaTrash, FaUserShield, FaUsers, FaExclamationTriangle,
     FaKey, FaEye, FaEyeSlash, FaChevronDown, FaChevronUp,
-    FaSolarPanel, FaBolt, FaBatteryFull, FaTachometerAlt, FaUnlink
+    FaSolarPanel, FaBolt, FaBatteryFull, FaTachometerAlt, FaUnlink, FaEnvelope
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import EnergyFlowChart from '../../components/EnergyFlowChart';
@@ -34,6 +34,8 @@ function AdminDashboard() {
     const [userDevices, setUserDevices] = useState({});
     const [devicesLoading, setDevicesLoading] = useState(false);
     const [selectedDevice, setSelectedDevice] = useState(null);
+
+    const [newEmail, setNewEmail] = useState('');
 
     useEffect(() => { fetchUsers(); }, []);
 
@@ -117,6 +119,12 @@ function AdminDashboard() {
         setSelectedUser(u); setNewPassword(''); setShowNewPassword(false);
         setModalAction('PASSWORD'); setShowModal(true);
     };
+    const confirmEmailChange = (u) => {
+        setSelectedUser(u);
+        setNewEmail(u.email);  // prefill current email
+        setModalAction('EMAIL');
+        setShowModal(true);
+    };
     // ✅ Unbind trigger
     const confirmUnbind = (device, ownerUser) => {
         setSelectedDevice(device); setSelectedUser(ownerUser);
@@ -182,6 +190,30 @@ function AdminDashboard() {
         finally { setPwLoading(false); }
     };
 
+    const executeEmailChange = async () => {
+        if (!newEmail || !newEmail.includes('@')) {
+            toast.error("Please enter a valid email address.");
+            return;
+        }
+        try {
+            const res = await fetch(`/api/users/${selectedUser.id}/email`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: newEmail })
+            });
+            if (res.ok) {
+                toast.success(`Email updated for ${selectedUser.fullName}. ✉️`);
+                setUsers(users.map(u => u.id === selectedUser.id ? { ...u, email: newEmail } : u));
+                closeModal();
+            } else {
+                const msg = await res.text();
+                toast.error(msg || "Update failed.");
+            }
+        } catch (error) {
+            toast.error("Server error.");
+        }
+    };
+
     const getDeviceIcon = (type) => {
         if (!type) return <FaSolarPanel />;
         const t = type.toLowerCase();
@@ -191,6 +223,8 @@ function AdminDashboard() {
         if (t.includes('meter'))    return <FaTachometerAlt />;
         return <FaSolarPanel />;
     };
+
+
 
     return (
         <>
@@ -352,6 +386,9 @@ function AdminDashboard() {
                                             <button className="gg-btn-action gg-btn-role" onClick={() => confirmRoleChange(u)}>
                                                 <FaUserShield /> Change Role
                                             </button>
+                                            <button className="gg-btn-action gg-btn-email" onClick={() => confirmEmailChange(u)}>
+                                                <FaEnvelope /> Change Email
+                                            </button>
                                             <button className="gg-btn-action gg-btn-password" onClick={() => confirmPasswordChange(u)}>
                                                 <FaKey /> Change Password
                                             </button>
@@ -413,17 +450,22 @@ function AdminDashboard() {
                 <div className="gg-modal-overlay" onClick={closeModal}>
                     <div className="gg-modal" onClick={e => e.stopPropagation()}>
                         <div className="gg-modal-header">
-                            <div className={`gg-modal-header-icon ${modalAction === 'DELETE' || modalAction === 'UNBIND' ? 'danger' : modalAction === 'PASSWORD' ? 'key' : 'warn'}`}>
+                            <div className={`gg-modal-header-icon ${
+                                modalAction === 'DELETE' || modalAction === 'UNBIND' ? 'danger' :
+                                    modalAction === 'PASSWORD' ? 'key' : 'warn'
+                            }`}>
                                 {modalAction === 'DELETE'   && <FaExclamationTriangle />}
                                 {modalAction === 'ROLE'     && <FaUserShield />}
                                 {modalAction === 'PASSWORD' && <FaKey />}
                                 {modalAction === 'UNBIND'   && <FaUnlink />}
+                                {modalAction === 'EMAIL'    && <FaEnvelope />}
                             </div>
                             <h5 className="gg-modal-title">
                                 {modalAction === 'DELETE'   && 'Delete User'}
                                 {modalAction === 'ROLE'     && 'Change Role'}
                                 {modalAction === 'PASSWORD' && 'Change Password'}
                                 {modalAction === 'UNBIND'   && 'Unbind Device'}
+                                {modalAction === 'EMAIL'    && 'Change Email'}
                             </h5>
                             <button className="gg-modal-close" onClick={closeModal}>✕</button>
                         </div>
@@ -456,7 +498,6 @@ function AdminDashboard() {
                                     </div>
                                 </>
                             )}
-                            {/* ✅ Unbind modal body */}
                             {modalAction === 'UNBIND' && (
                                 <>
                                     <p>Force-remove this device from <strong>{selectedUser?.fullName}</strong>?</p>
@@ -472,6 +513,19 @@ function AdminDashboard() {
                                     )}
                                 </>
                             )}
+                            {modalAction === 'EMAIL' && (
+                                <>
+                                    <p>Change email for <strong>{selectedUser?.fullName}</strong>.</p>
+                                    <p className="gg-modal-hint">The user will need to log in with the new email.</p>
+                                    <div className="gg-pw-wrap">
+                                        <input type="email" className="gg-pw-input"
+                                               placeholder="New email address"
+                                               value={newEmail}
+                                               onChange={e => setNewEmail(e.target.value)}
+                                               autoFocus />
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         <div className="gg-modal-footer">
@@ -480,6 +534,10 @@ function AdminDashboard() {
                                 <button className="gg-btn-confirm forest" onClick={executePasswordChange}
                                         disabled={pwLoading || newPassword.length < 6}>
                                     {pwLoading ? 'Saving…' : 'Update Password'}
+                                </button>
+                            ) : modalAction === 'EMAIL' ? (
+                                <button className="gg-btn-confirm forest" onClick={executeEmailChange}>
+                                    Update Email
                                 </button>
                             ) : (
                                 <button
