@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -190,6 +192,17 @@ public class AlertService {
                 da.getBattery(),
                 da.getDeletedAt(),
                 da.getUserId()
+        );
+    }
+
+    public Map<String, Object> getAlertHistoryReport(LocalDate start, LocalDate end) {
+        List<DeletedAlert> alerts = deletedAlertRepository.findByDeletedAtBetween(
+                start.atStartOfDay(), end.atTime(23, 59, 59)
+        );
+        return Map.of(
+                "alerts", alerts,
+                "total", alerts.size(),
+                "dateRange", start + " to " + end
         );
     }
 }

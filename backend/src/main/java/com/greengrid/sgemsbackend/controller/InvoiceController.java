@@ -92,4 +92,27 @@ public class InvoiceController {
         invoiceService.deleteInvoice(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/reports/invoices")
+    public ResponseEntity<?> getInvoiceReport(@RequestParam(required = false) String startDate,
+                                              @RequestParam(required = false) String endDate) {
+        // Only admin can access
+        LocalDate start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now().minusDays(30);
+        LocalDate end   = (endDate != null)   ? LocalDate.parse(endDate)   : LocalDate.now();
+
+        List<Invoice> invoices = invoiceService.getInvoicesByDateRange(start, end);
+        double totalRevenue = invoices.stream().mapToDouble(Invoice::getTotalAmount).sum();
+        long paidCount = invoices.stream().filter(i -> "PAID".equals(i.getStatus())).count();
+        long pendingCount = invoices.size() - paidCount;
+
+        Map<String, Object> report = Map.of(
+                "invoices", invoices,
+                "totalRevenue", totalRevenue,
+                "paidCount", paidCount,
+                "pendingCount", pendingCount,
+                "dateRange", start + " to " + end
+        );
+        return ResponseEntity.ok(report);
+    }
+
 }

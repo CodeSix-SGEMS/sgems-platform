@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 /* ─── Inline styles ─────────────────────────────────────────────────── */
 const styles = `
@@ -343,11 +344,12 @@ function SettingRow({ icon, iconColor, label, description, right, onClick }) {
 
 /* ─── Main Settings component ────────────────────────────────────────── */
 export default function Settings() {
-    const { user, updateUser } = useContext(AuthContext);
+    const { user, updateUser, logout } = useContext(AuthContext);
 
     const [emailNotify, setEmailNotify] = useState(user?.emailNotifications === true);
     const [pushNotify, setPushNotify]   = useState(false);
     const [toast, setToast]             = useState({ visible: false, message: '' });
+    const navigate = useNavigate();
 
     /* Inject styles once */
     useEffect(() => {
@@ -461,7 +463,10 @@ export default function Settings() {
             <div className="sg-divider" />
 
             {/* Logout */}
-            <button className="sg-danger-btn" onClick={() => showToast('Signing out…')}>
+            <button className="sg-danger-btn" onClick={() => {
+                logout();
+                navigate('/login');
+            }}>
                 <IconLogout />
                 Sign out of SGEMS
             </button>
