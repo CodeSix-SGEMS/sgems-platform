@@ -39,6 +39,9 @@ public class User {
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
 
-    public Boolean getEmailNotifications() { return emailNotifications; }
+    public Boolean getEmailNotifications() {
+        // If the database value is null, return true as the safe default
+        return emailNotifications != null ? emailNotifications : true;
+    }
     public void setEmailNotifications(Boolean emailNotifications) { this.emailNotifications = emailNotifications; }
 }

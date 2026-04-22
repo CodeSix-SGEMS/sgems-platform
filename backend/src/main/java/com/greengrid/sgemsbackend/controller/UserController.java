@@ -2,6 +2,7 @@ package com.greengrid.sgemsbackend.controller;
 
 import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.UserRepository;
+import com.greengrid.sgemsbackend.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +16,18 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-//@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    // Constructor injection (remove @Autowired from fields)
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+    }
 
     // 1. Get All Users
     @GetMapping
@@ -30,7 +35,7 @@ public class UserController {
         return userRepository.findAll();
     }
 
-    // 2. Add User (THIS IS THE MISSING DOOR)
+    // 2. Add User (sends welcome email)
     @PostMapping("/add")
     public ResponseEntity<?> addUser(@RequestBody User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
@@ -38,7 +43,16 @@ public class UserController {
         }
         // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
+        // Set default role if not provided
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("USER");
+        }
+        // Default email notifications to true
+        if (user.getEmailNotifications() == null) {
+            user.setEmailNotifications(true);
+        }
+        User savedUser = userRepository.save(user);   // capture saved user
+        emailService.sendWelcomeEmail(savedUser);     // send welcome email
         return ResponseEntity.ok("User created successfully");
     }
 
@@ -91,7 +105,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("message", "Email cannot be empty"));
         }
 
-        // Check if email is already taken by another user
         Optional<User> existingUser = userRepository.findByEmail(newEmail);
         if (existingUser.isPresent() && !existingUser.get().getId().equals(id)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Email already in use"));

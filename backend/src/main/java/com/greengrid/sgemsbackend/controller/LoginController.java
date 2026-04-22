@@ -2,10 +2,12 @@ package com.greengrid.sgemsbackend.controller;
 
 import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.UserRepository;
+import com.greengrid.sgemsbackend.service.EmailService;  // add this import
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;   // add this import
 import java.util.Map;
 import java.util.Optional;
 
@@ -15,14 +17,17 @@ public class LoginController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;      // add this field
 
-    public LoginController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    // update constructor
+    public LoginController(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest, HttpServletRequest request) {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");
 
@@ -32,12 +37,17 @@ public class LoginController {
             User user = userOptional.get();
 
             if (passwordEncoder.matches(password, user.getPassword())) {
+                // send login alert email (async)
+                String ip = request.getRemoteAddr();
+                String userAgent = request.getHeader("User-Agent");
+                emailService.sendLoginAlertEmail(user, ip, userAgent);
+
                 return ResponseEntity.ok(Map.of(
                         "message", "Login successful",
                         "id", user.getId(),
                         "role", user.getRole(),
                         "fullName", user.getFullName(),
-                        "emailNotifications", user.getEmailNotifications()  // ✅ Added this line
+                        "emailNotifications", user.getEmailNotifications() != null ? user.getEmailNotifications() : false
                 ));
             }
         }
@@ -57,12 +67,18 @@ public class LoginController {
             newUser.setRole("USER");
         }
 
-        // Default email notifications to true for new users
         if (newUser.getEmailNotifications() == null) {
             newUser.setEmailNotifications(true);
         }
 
-        userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
+        System.out.println("Saved user ID: " + savedUser.getId() + ", email: " + savedUser.getEmail());
+        System.out.println("Calling sendWelcomeEmail...");
+        emailService.sendWelcomeEmail(savedUser);
+        System.out.println("sendWelcomeEmail called (async)");
+
+        // send welcome email (async)
+        emailService.sendWelcomeEmail(savedUser);
 
         return ResponseEntity.ok(Map.of("message", "Registration successful"));
     }

@@ -37,6 +37,9 @@ function AdminDashboard() {
 
     const [newEmail, setNewEmail] = useState('');
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [roleFilter, setRoleFilter] = useState('ALL');
+
     useEffect(() => { fetchUsers(); }, []);
 
     const fetchUsers = async () => {
@@ -223,7 +226,13 @@ function AdminDashboard() {
         if (t.includes('meter'))    return <FaTachometerAlt />;
         return <FaSolarPanel />;
     };
-
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = searchTerm === '' ||
+            user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
+        return matchesSearch && matchesRole;
+    });
 
 
     return (
@@ -352,8 +361,45 @@ function AdminDashboard() {
                     <div className="gg-admin-card-header">
                         <FaUsers /> System Users
                         <span style={{ marginLeft:'auto', fontSize:'12px', color:'#9ab5a5' }}>
-                            {users.length} {users.length === 1 ? 'user' : 'users'} · Click a row to view devices
+                                {filteredUsers.length} of {users.length} users · Click a row to view devices
                         </span>
+                    </div>
+                    <div style={{ padding: '0 20px 12px 20px' }}>
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '16px' }}>
+                            <input
+                                type="text"
+                                placeholder="🔍 Search by name or email..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                style={{
+                                    flex: 1,
+                                    padding: '10px 14px',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(90,138,106,0.3)',
+                                    background: 'rgba(245,240,232,0.6)',
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontSize: '13.5px',
+                                    outline: 'none'
+                                }}
+                            />
+                            <select
+                                value={roleFilter}
+                                onChange={e => setRoleFilter(e.target.value)}
+                                style={{
+                                    padding: '10px 14px',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(90,138,106,0.3)',
+                                    background: 'rgba(245,240,232,0.6)',
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontSize: '13.5px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value="ALL">All Roles</option>
+                                <option value="ADMIN">Admins</option>
+                                <option value="USER">Users</option>
+                            </select>
+                        </div>
                     </div>
                     <table className="gg-table">
                         <thead>
@@ -363,7 +409,7 @@ function AdminDashboard() {
                         </tr>
                         </thead>
                         <tbody>
-                        {users.map(u => (
+                        {filteredUsers.map(u => (
                             <React.Fragment key={u.id}>
                                 {/* User row — click to expand */}
                                 <tr className="user-row" onClick={() => toggleExpand(u.id)}>

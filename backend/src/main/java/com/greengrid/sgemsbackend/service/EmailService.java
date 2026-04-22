@@ -12,6 +12,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.thymeleaf.context.Context;
+import java.time.LocalDateTime;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.javamail.MimeMessageHelper;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -56,6 +61,55 @@ public class EmailService {
             logger.info("Alert email sent to {} for alert ID {}", user.getEmail(), alert.getId());
         } catch (MessagingException e) {
             logger.error("Failed to send email for alert {}: {}", alert.getId(), e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendWelcomeEmail(User user) {
+        System.out.println("=== sendWelcomeEmail ENTERED for " + user.getEmail() + " ===");
+        if (!Boolean.TRUE.equals(user.getEmailNotifications())) return;
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail);
+            helper.setTo(user.getEmail());
+            helper.setSubject("🌱 Welcome to SGEMS – Smart Green Energy");
+
+            Context context = new Context();
+            context.setVariable("user", user);
+            String html = templateEngine.process("welcome-email", context);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+            logger.info("Welcome email sent to {}", user.getEmail());
+        } catch (MessagingException e) {
+            logger.error("Failed to send welcome email to {}: {}", user.getEmail(), e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendLoginAlertEmail(User user, String ipAddress, String userAgent) {
+        if (!Boolean.TRUE.equals(user.getEmailNotifications())) return;
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail);
+            helper.setTo(user.getEmail());
+            helper.setSubject("🔐 New login to your SGEMS account");
+
+            Context context = new Context();
+            context.setVariable("user", user);
+            context.setVariable("ipAddress", ipAddress != null ? ipAddress : "unknown");
+            context.setVariable("userAgent", userAgent != null ? userAgent : "unknown");
+            context.setVariable("loginTime", java.time.LocalDateTime.now());
+
+            String html = templateEngine.process("login-alert-email", context);
+            helper.setText(html, true);
+
+            mailSender.send(message);
+            logger.info("Login alert email sent to {}", user.getEmail());
+        } catch (MessagingException e) {
+            logger.error("Failed to send login alert to {}: {}", user.getEmail(), e.getMessage());
         }
     }
 }
