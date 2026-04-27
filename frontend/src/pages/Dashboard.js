@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { FaBolt, FaServer, FaUserCheck, FaSolarPanel, FaLeaf, FaDollarSign, FaSyncAlt } from 'react-icons/fa';
 import EnergyChart from '../components/EnergyChart';
 import WeatherWidget from '../components/WeatherWidget';
 import DevicePieChart from '../components/DevicePieChart';
-import EnergyFlowChart from '../components/EnergyFlowChart'; // ✅ Added the Import here
+import EnergyFlowChart from '../components/EnergyFlowChart';
 
 const API_BASE_URL = '';
 
@@ -12,12 +12,13 @@ function Dashboard() {
     const { user } = useContext(AuthContext);
     const [stats, setStats] = useState({});
     const [chartData, setChartData] = useState([]);
-    const [deviceData, setDeviceData] = useState([]); // ✅ moved INSIDE the component
+    const [deviceData, setDeviceData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedDays, setSelectedDays] = useState(7);
 
-    const loadData = async () => {
+    // Wrap loadData with useCallback to keep it stable for intervals
+    const loadData = useCallback(async () => {
         if (!user) return;
 
         console.log("🔄 Loading data...");
@@ -32,20 +33,19 @@ function Dashboard() {
             console.error("Stats error:", err);
         }
 
-        // Fetch device pie data
+        // Fetch device pie data (using static demo data if API not ready)
         try {
-            const deviceRes = // Inside loadData(), replace the device fetch with:
-                setDeviceData([
-                    { name: "Solar Panel A", value: 120.5 },
-                    { name: "Inverter B",    value: 98.2  },
-                    { name: "Battery C",     value: 45.0  }
-                ]);
-            if (deviceRes.ok) setDeviceData(await deviceRes.json());
+            // For now, use demo data – replace with real API when available
+            setDeviceData([
+                { name: "Solar Panel A", value: 120.5 },
+                { name: "Inverter B",    value: 98.2  },
+                { name: "Battery C",     value: 45.0  }
+            ]);
         } catch (err) {
             console.error("Device chart error:", err);
         }
 
-        // Fetch chart
+        // Fetch chart (energy history)
         try {
             const chartUrl = `${API_BASE_URL}/api/stats/chart?role=${user.role}&days=${selectedDays}`;
             console.log("📊 Fetching:", chartUrl);
@@ -64,12 +64,23 @@ function Dashboard() {
         }
 
         setLoading(false);
-    };
+    }, [user, selectedDays]);
 
+    // Initial load and when dependencies change
     useEffect(() => {
         loadData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user, selectedDays]);
+    }, [user, selectedDays, loadData]);
+
+    // Auto‑refresh every 3 seconds
+    useEffect(() => {
+        if (!user) return;
+        const interval = setInterval(() => {
+            if (!loading) {
+                loadData();
+            }
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [user, loadData, loading]);
 
     const adminCards = [
         { title: "System Status", value: stats.systemStatus || "Offline", color: "success", icon: <FaServer />, accent: "#2d5a3d" },
@@ -445,9 +456,7 @@ function Dashboard() {
                     ))}
                 </div>
 
-                {/* ========================================== */}
-                {/* 🌟 THE NEW FLOW CHART IS INSERTED HERE 🌟 */}
-                {/* ========================================== */}
+                {/* Energy Flow Chart */}
                 <div style={{ marginBottom: '28px' }}>
                     <EnergyFlowChart
                         solarKw={stats.currentSolar || 0}
@@ -457,9 +466,8 @@ function Dashboard() {
                     />
                 </div>
 
-                {/* ✅ Charts row — energy history + pie side by side */}
+                {/* Charts row — energy history + pie side by side */}
                 <div className="gg-charts-row">
-
                     {/* Energy History */}
                     <div className="gg-chart-card">
                         <div className="gg-chart-header">
@@ -493,7 +501,7 @@ function Dashboard() {
                         </div>
                     </div>
 
-                    {/* ✅ Device Pie Chart — sibling, NOT nested inside energy chart */}
+                    {/* Device Pie Chart */}
                     <div className="gg-chart-card">
                         <div className="gg-chart-header">
                             <div className="gg-chart-title">
@@ -509,7 +517,6 @@ function Dashboard() {
                             )}
                         </div>
                     </div>
-
                 </div>
             </div>
         </>
