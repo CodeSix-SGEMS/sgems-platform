@@ -66,6 +66,8 @@ function App() {
 
                     <Route path="/settings" element={<Settings />} />
 
+                    <Route path="/maintenance" element={<Maintenance />} />
+
                 </Routes>
             </Layout>
             {/* --- 2. ADD THE POPUP CONTAINER HERE --- */}

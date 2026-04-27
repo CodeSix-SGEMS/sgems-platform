@@ -4,6 +4,7 @@ import com.greengrid.sgemsbackend.entity.User;
 import com.greengrid.sgemsbackend.repository.UserRepository;
 import com.greengrid.sgemsbackend.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -59,8 +60,14 @@ public class UserController {
     // 3. Delete User
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        userRepository.deleteById(id);
-        return ResponseEntity.ok("User deleted");
+        try {
+            userRepository.deleteById(id);
+            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Cannot delete user. They have associated invoices, alerts, or maintenance requests. Delete those first."
+            ));
+        }
     }
 
     // 4. Change Role
@@ -115,5 +122,18 @@ public class UserController {
         user.setEmail(newEmail);
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "Email updated successfully"));
+    }
+
+    @PutMapping("/{id}/name")
+    public ResponseEntity<?> updateName(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        String newName = request.get("name");
+        if (newName == null || newName.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Name cannot be empty"));
+        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        user.setFullName(newName);
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Name updated successfully"));
     }
 }

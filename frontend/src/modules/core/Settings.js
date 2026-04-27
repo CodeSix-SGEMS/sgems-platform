@@ -1,13 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
-/* ─── Inline styles ─────────────────────────────────────────────────── */
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=DM+Sans:wght@400;500&display=swap');
-
   .sg-settings * { box-sizing: border-box; margin: 0; padding: 0; }
-
   .sg-settings {
     font-family: 'DM Sans', sans-serif;
     color: #1a1a1a;
@@ -15,8 +13,6 @@ const styles = `
     max-width: 780px;
     margin: 0 auto;
   }
-
-  /* Page header */
   .sg-page-header {
     display: flex;
     align-items: flex-end;
@@ -45,8 +41,6 @@ const styles = `
     font-size: 13px;
     color: #6b7280;
   }
-
-  /* Section label */
   .sg-section-label {
     font-size: 11px;
     font-weight: 500;
@@ -56,8 +50,6 @@ const styles = `
     margin-bottom: 10px;
     padding: 0 2px;
   }
-
-  /* Card */
   .sg-card {
     background: #fff;
     border: 0.5px solid rgba(0,0,0,0.1);
@@ -65,8 +57,6 @@ const styles = `
     overflow: hidden;
     margin-bottom: 1.5rem;
   }
-
-  /* Profile card */
   .sg-profile-card {
     background: #fff;
     border: 0.5px solid rgba(0,0,0,0.1);
@@ -110,8 +100,6 @@ const styles = `
     background: #e8f5ee;
     color: #1a6637;
   }
-
-  /* Setting row */
   .sg-setting-row {
     display: flex;
     align-items: center;
@@ -126,7 +114,6 @@ const styles = `
   .sg-setting-row:hover { background: #f9fafb; }
   .sg-setting-row.disabled { cursor: default; }
   .sg-setting-row.disabled:hover { background: transparent; }
-
   .sg-setting-icon {
     width: 36px;
     height: 36px;
@@ -140,7 +127,6 @@ const styles = `
   .sg-setting-icon.amber { background: #fdf3e0; }
   .sg-setting-icon.blue  { background: #e6f1fb; }
   .sg-setting-icon.coral { background: #faece7; }
-
   .sg-setting-body { flex: 1; min-width: 0; }
   .sg-setting-name {
     font-size: 14px;
@@ -153,8 +139,6 @@ const styles = `
     color: #6b7280;
     line-height: 1.5;
   }
-
-  /* Toggle switch */
   .sg-toggle {
     position: relative;
     width: 42px;
@@ -189,8 +173,6 @@ const styles = `
     pointer-events: none;
   }
   .sg-toggle-thumb.on { transform: translateX(18px); }
-
-  /* Badge */
   .sg-badge {
     font-size: 11px;
     font-weight: 500;
@@ -199,16 +181,11 @@ const styles = `
     flex-shrink: 0;
   }
   .sg-badge.coming { background: #fdf3e0; color: #7a5210; }
-  .sg-badge.new    { background: #e8f5ee; color: #1a6637; }
-
-  /* Divider */
   .sg-divider {
     height: 0.5px;
     background: rgba(0,0,0,0.08);
     margin: 0.25rem 0 1.5rem;
   }
-
-  /* Danger / logout button */
   .sg-danger-btn {
     width: 100%;
     padding: 13px;
@@ -227,8 +204,6 @@ const styles = `
     transition: background 0.15s, border-color 0.15s;
   }
   .sg-danger-btn:hover { background: #fcebeb; border-color: #e24b4a; }
-
-  /* Toast */
   .sg-toast {
     position: fixed;
     bottom: 28px;
@@ -253,67 +228,99 @@ const styles = `
     transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
+  .sg-edit-profile-btn {
+    margin-top: 8px;
+    background: none;
+    border: 1px solid #2d7a4f;
+    color: #2d7a4f;
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .sg-edit-profile-btn:hover { background: #e8f5ee; }
+  .sg-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .sg-modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    max-height: 90vh;
+    overflow: auto;
+  }
+  .sg-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+  }
+  .sg-modal-header h3 { margin: 0; }
+  .sg-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+  }
+  .sg-modal-body {
+    padding: 20px;
+  }
+  .sg-modal-body label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .sg-modal-body input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+  .sg-modal-footer {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #eee;
+  }
+  .sg-btn-cancel {
+    background: #f0f0f0;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .sg-btn-confirm.forest {
+    background: #2d7a4f;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
 `;
 
-/* ─── SVG icons ──────────────────────────────────────────────────────── */
-const IconGear = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2d7a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-);
+// SVG icons (same as before, omitted for brevity – keep your existing ones)
+const IconGear = () => ( <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2d7a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> );
+const IconMail = ({ color = '#2d7a4f' }) => ( <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> );
+const IconBell = ({ color = '#b07a10' }) => ( <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> );
+const IconSun = ({ color = '#185fa5' }) => ( <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> );
+const IconLayout = ({ color = '#993c1d' }) => ( <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> );
+const IconLogout = () => ( <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> );
+const IconCheck = () => ( <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6fcf97" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> );
 
-const IconMail = ({ color = '#2d7a4f' }) => (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-        <polyline points="22,6 12,13 2,6"/>
-    </svg>
-);
-
-const IconBell = ({ color = '#b07a10' }) => (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-    </svg>
-);
-
-const IconSun = ({ color = '#185fa5' }) => (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/>
-        <line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-    </svg>
-);
-
-const IconLayout = ({ color = '#993c1d' }) => (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <line x1="3" y1="9" x2="21" y2="9"/>
-        <line x1="9" y1="21" x2="9" y2="9"/>
-    </svg>
-);
-
-const IconLogout = () => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-        <polyline points="16 17 21 12 16 7"/>
-        <line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
-);
-
-const IconCheck = () => (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6fcf97" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-    </svg>
-);
-
-/* ─── Toggle component ───────────────────────────────────────────────── */
 function Toggle({ checked, onChange }) {
     return (
         <div className="sg-toggle" onClick={e => { e.stopPropagation(); onChange(!checked); }}>
@@ -323,16 +330,10 @@ function Toggle({ checked, onChange }) {
     );
 }
 
-/* ─── Setting row component ──────────────────────────────────────────── */
 function SettingRow({ icon, iconColor, label, description, right, onClick }) {
     return (
-        <div
-            className={`sg-setting-row${onClick ? '' : ' disabled'}`}
-            onClick={onClick}
-        >
-            <div className={`sg-setting-icon ${iconColor}`}>
-                {icon}
-            </div>
+        <div className={`sg-setting-row${onClick ? '' : ' disabled'}`} onClick={onClick}>
+            <div className={`sg-setting-icon ${iconColor}`}>{icon}</div>
             <div className="sg-setting-body">
                 <p className="sg-setting-name">{label}</p>
                 <p className="sg-setting-desc">{description}</p>
@@ -342,16 +343,23 @@ function SettingRow({ icon, iconColor, label, description, right, onClick }) {
     );
 }
 
-/* ─── Main Settings component ────────────────────────────────────────── */
 export default function Settings() {
     const { user, updateUser, logout } = useContext(AuthContext);
-
-    const [emailNotify, setEmailNotify] = useState(user?.emailNotifications === true);
-    const [pushNotify, setPushNotify]   = useState(false);
-    const [toast, setToast]             = useState({ visible: false, message: '' });
     const navigate = useNavigate();
 
-    /* Inject styles once */
+    // States for existing toggles
+    const [emailNotify, setEmailNotify] = useState(user?.emailNotifications === true);
+    const [pushNotify, setPushNotify] = useState(false);
+    const [toastMsg, setToastMsg] = useState({ visible: false, message: '' });
+
+    // Modal states
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [editName, setEditName] = useState(user?.fullName || '');
+    const [editEmail, setEditEmail] = useState(user?.email || '');
+    const [editPassword, setEditPassword] = useState('');
+    const [editConfirmPassword, setEditConfirmPassword] = useState('');
+    const [profileLoading, setProfileLoading] = useState(false);
+
     useEffect(() => {
         const id = 'sgems-settings-styles';
         if (!document.getElementById(id)) {
@@ -360,45 +368,107 @@ export default function Settings() {
             el.textContent = styles;
             document.head.appendChild(el);
         }
-    }, []);
+        // Sync modal fields when user changes
+        setEditName(user?.fullName || '');
+        setEditEmail(user?.email || '');
+    }, [user]);
 
-    /* Toast helper */
     const showToast = (message) => {
-        setToast({ visible: true, message });
-        setTimeout(() => setToast({ visible: false, message: '' }), 2400);
+        setToastMsg({ visible: true, message });
+        setTimeout(() => setToastMsg({ visible: false, message: '' }), 2400);
     };
 
-    /* Email notifications */
     const handleEmailToggle = async (newValue) => {
         setEmailNotify(newValue);
         try {
-            await fetch(`/api/users/${user.id}/email-notifications?enabled=${newValue}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-            });
+            await fetch(`/api/users/${user.id}/email-notifications?enabled=${newValue}`, { method: 'PUT' });
             updateUser({ ...user, emailNotifications: newValue });
             showToast(`Email notifications ${newValue ? 'enabled' : 'disabled'}`);
         } catch {
             setEmailNotify(!newValue);
-            showToast('Failed to save. Please try again.');
+            showToast('Failed to save');
         }
     };
 
-    /* Push notifications (placeholder) */
     const handlePushToggle = (newValue) => {
         setPushNotify(newValue);
-        showToast(`Push notifications ${newValue ? 'enabled' : 'disabled'}`);
+        showToast(`Push notifications ${newValue ? 'enabled' : 'disabled'} (coming soon)`);
     };
 
-    /* Avatar initials */
-    const initials = user?.name
-        ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
+    const handleSaveProfile = async () => {
+        if (editPassword && editPassword !== editConfirmPassword) {
+            showToast("Passwords do not match");
+            return;
+        }
+        if (editPassword && editPassword.length < 6) {
+            showToast("Password must be at least 6 characters");
+            return;
+        }
+        if (!editName.trim()) {
+            showToast("Name cannot be empty");
+            return;
+        }
+        if (!editEmail.includes('@')) {
+            showToast("Invalid email address");
+            return;
+        }
+
+        setProfileLoading(true);
+        try {
+            // Update name
+            const nameRes = await fetch(`/api/users/${user.id}/name`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: editName })
+            });
+            if (!nameRes.ok) throw new Error("Name update failed");
+
+            // Update email
+            const emailRes = await fetch(`/api/users/${user.id}/email`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: editEmail })
+            });
+            if (!emailRes.ok) throw new Error("Email update failed");
+
+            // Update password if provided
+            if (editPassword) {
+                const passRes = await fetch(`/api/users/${user.id}/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: editPassword })
+                });
+                if (!passRes.ok) throw new Error("Password update failed");
+            }
+
+            // Update local user context
+            updateUser({ ...user, fullName: editName, email: editEmail });
+            showToast("Profile updated successfully");
+            setShowProfileModal(false);
+            setEditPassword('');
+            setEditConfirmPassword('');
+
+            // If email or password changed, log out after 2 seconds
+            if (editEmail !== user.email || editPassword) {
+                showToast("Email or password changed. Logging you out...");
+                setTimeout(() => {
+                    logout();
+                    navigate('/login');
+                }, 2000);
+            }
+        } catch (err) {
+            showToast(err.message || "Update failed");
+        } finally {
+            setProfileLoading(false);
+        }
+    };
+
+    const initials = user?.fullName
+        ? user.fullName.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
         : 'U';
 
     return (
         <div className="sg-settings">
-
-            {/* Page header */}
             <div className="sg-page-header">
                 <div className="sg-page-icon"><IconGear /></div>
                 <div>
@@ -407,20 +477,51 @@ export default function Settings() {
                 </div>
             </div>
 
-            {/* Account */}
-            <p className="sg-section-label">Your account</p>
+            {/* Your Account Section */}
+            <p className="sg-section-label">Your Account</p>
             <div className="sg-profile-card">
                 <div className="sg-avatar">{initials}</div>
-                <div>
-                    <p className="sg-profile-name">{user?.name || 'User'}</p>
+                <div style={{ flex: 1 }}>
+                    <p className="sg-profile-name">{user?.fullName || 'User'}</p>
                     <p className="sg-profile-email">{user?.email || ''}</p>
+                    <button className="sg-edit-profile-btn" onClick={() => setShowProfileModal(true)}>
+                        ✎ Edit Profile
+                    </button>
                 </div>
                 <span className="sg-profile-tag">
-          {user?.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase() : 'User'}
-        </span>
+                    {user?.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase() : 'User'}
+                </span>
             </div>
 
-            {/* Notifications */}
+            {/* Profile Edit Modal */}
+            {showProfileModal && (
+                <div className="sg-modal-overlay" onClick={() => setShowProfileModal(false)}>
+                    <div className="sg-modal" onClick={e => e.stopPropagation()}>
+                        <div className="sg-modal-header">
+                            <h3>Edit Profile</h3>
+                            <button className="sg-modal-close" onClick={() => setShowProfileModal(false)}>✕</button>
+                        </div>
+                        <div className="sg-modal-body">
+                            <label>Full Name</label>
+                            <input type="text" value={editName} onChange={e => setEditName(e.target.value)} />
+                            <label>Email Address</label>
+                            <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+                            <label>New Password (optional)</label>
+                            <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep current" />
+                            <label>Confirm Password</label>
+                            <input type="password" value={editConfirmPassword} onChange={e => setEditConfirmPassword(e.target.value)} placeholder="Confirm new password" />
+                        </div>
+                        <div className="sg-modal-footer">
+                            <button className="sg-btn-cancel" onClick={() => setShowProfileModal(false)}>Cancel</button>
+                            <button className="sg-btn-confirm forest" onClick={handleSaveProfile} disabled={profileLoading}>
+                                {profileLoading ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Notifications Section */}
             <p className="sg-section-label">Notifications</p>
             <div className="sg-card">
                 <SettingRow
@@ -441,7 +542,7 @@ export default function Settings() {
                 />
             </div>
 
-            {/* Display */}
+            {/* Display Section */}
             <p className="sg-section-label">Display</p>
             <div className="sg-card">
                 <SettingRow
@@ -463,20 +564,14 @@ export default function Settings() {
             <div className="sg-divider" />
 
             {/* Logout */}
-            <button className="sg-danger-btn" onClick={() => {
-                logout();
-                navigate('/login');
-            }}>
-                <IconLogout />
-                Sign out of SGEMS
+            <button className="sg-danger-btn" onClick={() => { logout(); navigate('/login'); }}>
+                <IconLogout /> Sign out of SGEMS
             </button>
 
             {/* Toast */}
-            <div className={`sg-toast${toast.visible ? ' show' : ''}`}>
-                <IconCheck />
-                {toast.message}
+            <div className={`sg-toast${toastMsg.visible ? ' show' : ''}`}>
+                <IconCheck /> {toastMsg.message}
             </div>
-
         </div>
     );
 }

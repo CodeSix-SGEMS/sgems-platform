@@ -67,9 +67,10 @@ public class AlertController {
 
     @GetMapping("/reports/history")
     public ResponseEntity<?> getAlertHistoryReport(@RequestParam(required = false) String startDate,
-                                                   @RequestParam(required = false) String endDate) {
+                                                   @RequestParam(required = false) String endDate,
+                                                   @RequestParam Long userId) {
         LocalDate start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now().minusDays(30);
         LocalDate end   = (endDate != null)   ? LocalDate.parse(endDate)   : LocalDate.now();
-        return ResponseEntity.ok(alertService.getAlertHistoryReport(start, end));
+        return ResponseEntity.ok(alertService.getAlertHistoryReport(start, end, userId));
     }
 }

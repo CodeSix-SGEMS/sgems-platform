@@ -195,14 +195,14 @@ public class AlertService {
         );
     }
 
-    public Map<String, Object> getAlertHistoryReport(LocalDate start, LocalDate end) {
-        List<DeletedAlert> alerts = deletedAlertRepository.findByDeletedAtBetween(
-                start.atStartOfDay(), end.atTime(23, 59, 59)
-        );
-        return Map.of(
-                "alerts", alerts,
-                "total", alerts.size(),
-                "dateRange", start + " to " + end
-        );
+    public Map<String, Object> getAlertHistoryReport(LocalDate start, LocalDate end, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow();
+        List<DeletedAlert> alerts;
+        if ("ADMIN".equals(user.getRole())) {
+            alerts = deletedAlertRepository.findByDeletedAtBetween(start.atStartOfDay(), end.atTime(23, 59, 59));
+        } else {
+            alerts = deletedAlertRepository.findByUserIdAndDeletedAtBetween(userId, start.atStartOfDay(), end.atTime(23, 59, 59));
+        }
+        return Map.of("alerts", alerts, "total", alerts.size(), "dateRange", start + " to " + end);
     }
 }
