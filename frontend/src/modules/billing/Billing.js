@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const API = "http://localhost:8080/api";
@@ -11,15 +13,11 @@ export default function BillingPage() {
     const [invoices, setInvoices] = useState([]);
     const [payments, setPayments] = useState([]);
     const [users, setUsers] = useState([]);
-
+    const [loading, setLoading] = useState(false);
 
     const [createForm, setCreateForm] = useState({ userId: "", unitsConsumed: "" });
-
-
     const [editModal, setEditModal] = useState(false);
     const [editForm, setEditForm] = useState({ id: null, userId: "", unitsConsumed: "" });
-
-
     const [dateFilter, setDateFilter] = useState({ start: "", end: "" });
 
     useEffect(() => {
@@ -29,12 +27,15 @@ export default function BillingPage() {
     }, []);
 
     const loadInvoices = async (start, end) => {
+        setLoading(true);
         try {
             const params = start && end ? { start, end } : {};
             const res = await axios.get(`${API}/invoices`, { params });
             setInvoices(res.data);
         } catch (err) {
-            console.error("Failed to load invoices", err);
+            toast.error("Failed to load invoices");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -43,7 +44,7 @@ export default function BillingPage() {
             const res = await axios.get(`${API}/payments`);
             setPayments(res.data);
         } catch (err) {
-            console.error("Failed to load payments", err);
+            toast.error("Failed to load payments");
         }
     };
 
@@ -52,21 +53,25 @@ export default function BillingPage() {
             const res = await axios.get(`${API}/users`);
             setUsers(res.data);
         } catch (err) {
-            console.error("Failed to load users", err);
+            toast.error("Failed to load users");
         }
     };
 
     const handleCreate = async () => {
-        if (!createForm.userId || !createForm.unitsConsumed) return;
+        if (!createForm.userId || !createForm.unitsConsumed) {
+            toast.warn("Please select a customer and enter units consumed");
+            return;
+        }
         try {
             await axios.post(`${API}/invoices`, {
                 userId: parseInt(createForm.userId),
                 unitsConsumed: parseFloat(createForm.unitsConsumed),
             });
+            toast.success("Invoice generated successfully");
             setCreateForm({ userId: "", unitsConsumed: "" });
             loadInvoices();
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to create invoice");
+            toast.error(err.response?.data?.message || "Failed to create invoice");
         }
     };
 
@@ -85,20 +90,22 @@ export default function BillingPage() {
                 userId: parseInt(editForm.userId),
                 unitsConsumed: parseFloat(editForm.unitsConsumed),
             });
+            toast.success("Invoice updated");
             setEditModal(false);
             loadInvoices();
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to update invoice");
+            toast.error(err.response?.data?.message || "Failed to update invoice");
         }
     };
 
     const handlePay = async (inv) => {
         try {
             await axios.put(`${API}/invoices/pay/${inv.id}`, { method: "CARD" });
+            toast.success(`Invoice #${inv.id} marked as PAID`);
             loadInvoices();
             loadPayments();
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to pay invoice");
+            toast.error(err.response?.data?.message || "Failed to pay invoice");
         }
     };
 
@@ -106,28 +113,34 @@ export default function BillingPage() {
         if (!window.confirm("Delete this invoice?")) return;
         try {
             await axios.delete(`${API}/invoices/${id}`);
+            toast.success("Invoice deleted");
             loadInvoices();
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to delete invoice");
+            toast.error(err.response?.data?.message || "Failed to delete invoice");
         }
     };
 
     const handleDateFilter = () => {
         if (dateFilter.start && dateFilter.end) {
             loadInvoices(dateFilter.start, dateFilter.end);
+            toast.info(`Filtered: ${dateFilter.start} to ${dateFilter.end}`);
+        } else {
+            toast.warn("Please select both start and end dates");
         }
     };
 
     const handleClearFilter = () => {
         setDateFilter({ start: "", end: "" });
         loadInvoices();
+        toast.info("Filter cleared");
     };
 
     return (
         <div className="container-fluid p-4">
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />
             <h2 className="mb-4">💰 Billing Management</h2>
 
-            {/* ── Date Filter ── */}
+            {/* Date Filter */}
             <div className="card shadow-sm mb-4">
                 <div className="card-header">Filter by Date Range</div>
                 <div className="card-body row g-3 align-items-end">
@@ -162,7 +175,7 @@ export default function BillingPage() {
                 </div>
             </div>
 
-            {/* ── Generate Invoice ── */}
+            {/* Generate Invoice */}
             <div className="card shadow-sm mb-4">
                 <div className="card-header">Generate Invoice</div>
                 <div className="card-body row g-3">
@@ -199,10 +212,11 @@ export default function BillingPage() {
                 </div>
             </div>
 
-            {/* ── Invoices Table ── */}
+            {/* Invoices Table */}
             <div className="card shadow-sm mb-4">
                 <div className="card-header">Invoices</div>
                 <div className="card-body">
+                    {loading && <div className="text-center">Loading...</div>}
                     <table className="table table-bordered table-hover">
                         <thead className="table-light">
                         <tr>
@@ -224,9 +238,9 @@ export default function BillingPage() {
                                 <td>LKR {inv.totalAmount?.toFixed(2)}</td>
                                 <td>{inv.invoiceDate}</td>
                                 <td>
-                                        <span className={`badge ${inv.status === "PAID" ? "bg-success" : "bg-warning text-dark"}`}>
-                                            {inv.status}
-                                        </span>
+                                    <span className={`badge ${inv.status === "PAID" ? "bg-success" : "bg-warning text-dark"}`}>
+                                        {inv.status}
+                                    </span>
                                 </td>
                                 <td>
                                     {inv.status === "PENDING" && (
@@ -254,7 +268,7 @@ export default function BillingPage() {
                                 </td>
                             </tr>
                         ))}
-                        {invoices.length === 0 && (
+                        {invoices.length === 0 && !loading && (
                             <tr>
                                 <td colSpan="7" className="text-center text-muted">No invoices found</td>
                             </tr>
@@ -264,7 +278,7 @@ export default function BillingPage() {
                 </div>
             </div>
 
-            {/* ── Payment History ── */}
+            {/* Payment History */}
             <div className="card shadow-sm">
                 <div className="card-header">Payment History</div>
                 <div className="card-body">
@@ -300,7 +314,7 @@ export default function BillingPage() {
                 </div>
             </div>
 
-            {/* ── Edit Modal ── */}
+            {/* Edit Modal */}
             {editModal && (
                 <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
                     <div className="modal-dialog">

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './Inventory.css';
 
 const Inventory = () => {
@@ -22,7 +24,10 @@ const Inventory = () => {
             if (!res.ok) throw new Error(`Server error: ${res.status}`);
             const data = await res.json();
             setAssets(Array.isArray(data) ? data : []);
-        } catch (err) { setError('Failed to load inventory. Is the backend running?'); }
+        } catch (err) {
+            setError('Failed to load inventory. Is the backend running?');
+            toast.error('Failed to load inventory');
+        }
         finally { setLoading(false); }
     };
 
@@ -33,7 +38,10 @@ const Inventory = () => {
 
     const handleAddAsset = async (e) => {
         e.preventDefault();
-        if (!newAsset.name || !newAsset.category || !newAsset.serialNumber) return;
+        if (!newAsset.name || !newAsset.category || !newAsset.serialNumber) {
+            toast.warn('Please fill name, category, and serial number');
+            return;
+        }
         setAddLoading(true);
         try {
             const res = await fetch('/api/inventory', {
@@ -41,11 +49,18 @@ const Inventory = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...newAsset, status: 'Available' })
             });
-            if (!res.ok) { const msg = await res.text(); alert(msg || 'Failed to add asset.'); return; }
+            if (!res.ok) {
+                const msg = await res.text();
+                toast.error(msg || 'Failed to add asset.');
+                return;
+            }
             const created = await res.json();
             setAssets([...assets, created]);
             setNewAsset({ name: '', category: '', location: '', serialNumber: '' });
-        } catch (err) { alert('Failed to add asset. Please try again.'); }
+            toast.success('Asset added successfully');
+        } catch (err) {
+            toast.error('Failed to add asset. Please try again.');
+        }
         finally { setAddLoading(false); }
     };
 
@@ -60,11 +75,18 @@ const Inventory = () => {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(editAsset)
             });
-            if (!res.ok) { const msg = await res.text(); alert(msg || 'Failed to update asset.'); return; }
+            if (!res.ok) {
+                const msg = await res.text();
+                toast.error(msg || 'Failed to update asset.');
+                return;
+            }
             const updated = await res.json();
             setAssets(assets.map(a => a.id === updated.id ? updated : a));
             setEditAsset(null);
-        } catch (err) { alert('Failed to update asset. Please try again.'); }
+            toast.success('Asset updated successfully');
+        } catch (err) {
+            toast.error('Failed to update asset. Please try again.');
+        }
         finally { setEditLoading(false); }
     };
 
@@ -75,10 +97,17 @@ const Inventory = () => {
         setDeleteLoading(true);
         try {
             const res = await fetch(`/api/inventory/${deleteAsset.id}`, { method: 'DELETE' });
-            if (!res.ok) { const msg = await res.text(); alert(msg); return; }
+            if (!res.ok) {
+                const msg = await res.text();
+                toast.error(msg);
+                return;
+            }
             setAssets(assets.filter(a => a.id !== deleteAsset.id));
             setDeleteAsset(null);
-        } catch (err) { alert('Failed to delete asset. Please try again.'); }
+            toast.success('Asset deleted successfully');
+        } catch (err) {
+            toast.error('Failed to delete asset. Please try again.');
+        }
         finally { setDeleteLoading(false); }
     };
 
@@ -92,6 +121,7 @@ const Inventory = () => {
 
     return (
         <div className="page-container">
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop />
             <h2 className="page-title">Inventory Management</h2>
 
             {/* ADD NEW ASSET */}
@@ -104,7 +134,6 @@ const Inventory = () => {
                            value={newAsset.category} onChange={handleInputChange} required />
                     <input type="text" name="location" placeholder="Location (e.g., Warehouse A)"
                            value={newAsset.location} onChange={handleInputChange} />
-                    {/* ✅ Serial number required */}
                     <input type="text" name="serialNumber" placeholder="Serial Number (e.g., SN-1234)"
                            value={newAsset.serialNumber} onChange={handleInputChange} required />
                     <button type="submit" className="btn-add" disabled={addLoading}>
@@ -143,7 +172,7 @@ const Inventory = () => {
                             <th>Asset Name</th>
                             <th>Category</th>
                             <th>Location</th>
-                            <th>Serial Number</th>{/* ✅ new column */}
+                            <th>Serial Number</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -179,7 +208,7 @@ const Inventory = () => {
                 )}
             </div>
 
-            {/* EDIT MODAL */}
+            {/* EDIT MODAL (same as before) */}
             {editAsset && (
                 <div style={modalStyles.overlay} onClick={() => !editLoading && setEditAsset(null)}>
                     <div style={modalStyles.modal} onClick={e => e.stopPropagation()}>
@@ -194,7 +223,6 @@ const Inventory = () => {
                                     <input type="text" name={field} value={editAsset[field] || ''} onChange={handleEditChange} style={modalStyles.input} />
                                 </div>
                             ))}
-                            {/* ✅ Serial — disabled if In Use */}
                             <div style={modalStyles.field}>
                                 <label style={modalStyles.label}>Serial Number</label>
                                 <input type="text" name="serialNumber"
